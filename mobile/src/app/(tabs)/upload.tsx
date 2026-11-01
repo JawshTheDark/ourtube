@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Linking, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/Text';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { router } from 'expo-router';
@@ -125,6 +125,7 @@ export default function Upload() {
         tags: fields.tags,
         game: fields.game.trim(),
         visibility: fields.visibility,
+        ...(fields.visibility === 'group' && fields.group_id ? { group_id: fields.group_id } : {}),
         allow_clips: String(fields.allow_clips),
       },
       file,
@@ -227,6 +228,15 @@ export default function Upload() {
           </>
         )}
         {!file && <Text style={[s.hint, { textAlign: 'center' }]}>{`Videos up to ${bytes((site?.max_upload_mb || 0) * 1024 * 1024)} go to ${server.replace(/^https?:\/\//, '')}.`}</Text>}
+        {!file && (
+          <Text style={[s.hint, { textAlign: 'center' }]}>
+            {'Bringing videos over from YouTube or Immich? '}
+            <Text style={{ color: colors.link }} onPress={() => Linking.openURL(`${server}/import`)}>
+              Import them on the website
+            </Text>
+            .
+          </Text>
+        )}
       </KeyboardAwareScrollView>
     </View>
   );

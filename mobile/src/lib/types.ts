@@ -62,13 +62,29 @@ export type RemoteInfo = {
 
 export type Visibility = 'public' | 'unlisted' | 'private';
 
+/** A video can also be for one group's members only (OurTube 1.24); playlists can't. */
+export type VideoVisibility = Visibility | 'group';
+
+/** One of your groups (a family or a circle of friends), from /api/groups. */
+export type Group = {
+  id: string;
+  name: string;
+  owner: { id: string; username: string; display_name: string };
+  is_owner: boolean;
+  members: number;
+  videos: number;
+  invite_url: string | null; // a path like /groups/join/<token>, for the owner only
+  created_at: number;
+};
+
 export type Video = {
   id: string;
   title: string;
   description: string;
-  visibility: Visibility;
+  visibility: VideoVisibility;
   draft?: boolean;
-  draft_visibility?: Visibility | null;
+  draft_visibility?: VideoVisibility | null;
+  group?: { id: string; name: string } | null;
   status: string; // queued | processing | ready | failed
   progress?: number;
   error?: string | null;

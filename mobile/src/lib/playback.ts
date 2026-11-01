@@ -114,3 +114,42 @@ export function playRange(start: number, end: number): boolean {
   }, 100);
   return true;
 }
+
+/** The share of a video that has to be played for a view to count (OurTube 1.25). */
+export const VIEW_SHARE = 0.75;
+
+/**
+ * Counts a view the way the website does (web/src/util.js usePlayedView): marks which hundredths of the video were
+ * played, from time updates 0 to 2 seconds apart while playing (a seek or a skip marks nothing, and watching a part
+ * again doesn't add up; a looping Short keeps adding the parts it hadn't played). Once 75 hundredths are marked,
+ * `onPlayed` gets the seconds played, once per `key`. The player needs a time update at least every second.
+ */
+export function usePlayedView(player: VideoPlayer, key: string | null, onPlayed: (seconds: number) => void) {
+  const cb = useRef(onPlayed);
+  cb.current = onPlayed;
+  useEffect(() => {
+    if (!key) return;
+    const parts = new Set<number>();
+    let last: number | null = null;
+    let done = false;
+    const sub = player.addListener('timeUpdate', ({ currentTime: t }) => {
+      let d = 0;
+      let playing = false;
+      try {
+        d = player.duration;
+        playing = player.playing;
+      } catch {
+        return; // released
+      }
+      if (!done && last !== null && playing && d > 0 && Number.isFinite(d) && t > last && t - last < 2) {
+        for (let p = Math.floor((last / d) * 100); p <= Math.min(99, Math.floor((t / d) * 100)); p++) parts.add(p);
+        if (parts.size >= VIEW_SHARE * 100) {
+          done = true;
+          cb.current(Math.round(parts.size * d) / 100);
+        }
+      }
+      last = t;
+    });
+    return () => sub.remove();
+  }, [player, key]);
+}

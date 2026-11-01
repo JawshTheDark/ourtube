@@ -63,6 +63,9 @@ function Root() {
       <Stack.Screen name="studio/edit/[id]" options={{ title: 'Video details' }} />
       <Stack.Screen name="studio/editor/[id]" options={{ title: 'Editor' }} />
       <Stack.Screen name="studio/analytics" options={{ title: 'Analytics' }} />
+      <Stack.Screen name="groups/index" options={{ title: 'Groups' }} />
+      <Stack.Screen name="groups/[id]" options={{ title: '' }} />
+      <Stack.Screen name="groups/join/[token]" options={{ title: 'Join a group' }} />
       <Stack.Screen name="network" options={{ title: 'Network' }} />
       <Stack.Screen name="legal" options={{ title: 'Rules and contact' }} />
       <Stack.Screen name="transparency" options={{ title: 'Transparency report' }} />

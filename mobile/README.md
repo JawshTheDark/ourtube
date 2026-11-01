@@ -35,6 +35,7 @@ Watching and browsing work on any version.
 | Explore | Search with the website's filters (sort, length, date, shape, game, server), the Network page, and the game catalog with SteamGridDB artwork; game and channel pages |
 | Upload | Pick a video (or share one to OurTube from Gallery, Files, Google Photos or Immich), set title, description, game, tags, visibility and clipping, watch progress and processing. On 1.10+ it goes up in 8 MB pieces that survive dropped connections and resume after the app is closed |
 | You | Your videos as the Studio (states, retry, delete; full details with thumbnail, captions, skippable parts and suggestions; analytics; comments to review; the timeline editor with filmstrip, waveform, trimming, splitting, volume, fades, thumbnail frames and clips), history, liked videos, subscriptions with Follow from the fediverse, the server's rules, transparency report and fediverse help, sign out |
+| Groups | You → Groups (server 1.24+): make groups, add people or share a join link, rename, delete or leave; 'Only for <group>' in Upload and video details; join links open in the app |
 | Linked accounts | Link your accounts on other servers or Mastodon (1.6+); channels show Also on, Subscribe to all and an All accounts filter |
 | Playlists | Save to Watch later or a playlist, play a list with shuffle, loop and autoplay, edit and reorder your own (1.7+) |
 | Watch parties | Synced playback with chat, reactions, a shared queue and host controls, over the server's event stream (1.8+) |

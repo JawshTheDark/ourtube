@@ -18,7 +18,8 @@ import { readable } from '@/lib/layout';
 import { pickFile } from '@/lib/pick';
 import { useSession } from '@/lib/session';
 import { colors } from '@/lib/theme';
-import type { Video, Visibility } from '@/lib/types';
+import type { Video, Visibility, VideoVisibility } from '@/lib/types';
+import { useMyGroups } from '@/lib/groups';
 
 const VISIBILITY: { value: Visibility; label: string; hint: string }[] = [
   { value: 'public', label: 'Public', hint: 'Anyone can find and watch this video.' },
@@ -36,7 +37,8 @@ type Form = {
   title: string;
   description: string;
   tags: string;
-  visibility: Visibility;
+  visibility: VideoVisibility;
+  group_id: string | null;
   federate: boolean;
   comment_mode: (typeof COMMENTS)[number]['value'];
   game: string;
@@ -49,6 +51,7 @@ const toForm = (v: Video): Form => ({
   description: v.description || '',
   tags: (v.tags || []).join(', '),
   visibility: (v.draft ? v.draft_visibility : v.visibility) || 'public',
+  group_id: v.group?.id || null,
   federate: v.federate !== false,
   comment_mode: v.comment_mode || 'inherit',
   game: v.game?.name || '',
@@ -65,6 +68,7 @@ export default function EditVideo() {
   const [form, setForm] = useState<Form | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const groups = useMyGroups();
   const path = `/videos/${encodeURIComponent(id)}`;
 
   const load = useCallback(
@@ -171,8 +175,33 @@ export default function EditVideo() {
         <Field label="Game">
           <GameField value={form.game} onChange={(game) => set({ game })} />
         </Field>
-        <Field label="Visibility" hint={VISIBILITY.find((x) => x.value === form.visibility)?.hint}>
-          <Select value={form.visibility} options={VISIBILITY.map(({ value, label }) => ({ value, label }))} onChange={(visibility) => set({ visibility })} />
+        <Field
+          label="Visibility"
+          hint={
+            form.visibility === 'group'
+              ? `Only the people in ${groups?.find((g) => g.id === form.group_id)?.name || video.group?.name || 'the group'} can watch it.`
+              : VISIBILITY.find((x) => x.value === form.visibility)?.hint
+          }
+        >
+          <Select
+            value={form.visibility === 'group' ? `group:${form.group_id || ''}` : form.visibility}
+            options={[
+              ...VISIBILITY.map(({ value, label }) => ({ value: value as string, label })),
+              ...(groups || []).map((g) => ({ value: `group:${g.id}`, label: `Only for ${g.name}`, hint: 'A group' })),
+              // A group you're no longer in (or that hasn't loaded) still shows what the video is set to.
+              ...(form.visibility === 'group' && !groups?.some((g) => g.id === form.group_id) ? [{ value: `group:${form.group_id || ''}`, label: `Only for ${video.group?.name || 'a group'}` }] : []),
+            ]}
+            onChange={(v) => set(v.startsWith('group:') ? { visibility: 'group', group_id: v.slice(6) } : { visibility: v as Visibility, group_id: null })}
+          />
+          {groups?.length === 0 && (
+            <Text style={fs.hint}>
+              To share with just your family or friends,{' '}
+              <Text style={{ color: colors.link }} onPress={() => router.push('/groups' as any)}>
+                make a group
+              </Text>
+              .
+            </Text>
+          )}
         </Field>
         <Field label="Comments">
           <Select value={form.comment_mode} options={COMMENTS.map((c) => ({ ...c }))} onChange={(comment_mode) => set({ comment_mode })} />

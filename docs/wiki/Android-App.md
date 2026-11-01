@@ -22,6 +22,7 @@ the website, so nothing needs setting up on the server beyond running version 1.
 - [Studio](#studio)
 - [On the watch page](#on-the-watch-page)
 - [Timeline editor](#timeline-editor)
+- [Groups](#groups)
 - [Admin and moderation](#admin-and-moderation)
 - [Shorts](#shorts)
 - [Comments and times](#comments-and-times)
@@ -192,6 +193,10 @@ audience retention. **Comments to review** lists comments held on your videos, t
 - **Compare** puts two clips on one timeline, each with its own start (nudge by a second, a tenth or a frame),
   at up to quarter speed, with the sound from either; **Share** sends a link lined up as it is.
 
+A view counts once you've played 75% of the video (skipping ahead or watching a part again doesn't add up; a
+looping Short does), as on the website from OurTube 1.25. Opening a video still adds it to your history. App
+versions before 1.8.0 don't send this, so on a 1.25 server their views stop counting.
+
 Comments and channels have **Report** too (a comment's is beside Reply; a channel's is the flag by Subscribe).
 
 ## Timeline editor
@@ -210,6 +215,22 @@ website's editor (see [Uploading and Editing](Uploading-and-Editing.md)), workin
 - **Undo** and **Redo** are at the top with **Save**, which renders the edit on the server (the current version
   stays up until it's done); the ⋮ menu has **Discard changes** and **Revert to original**. Leaving with unsaved
   changes asks first.
+
+## Groups
+
+With OurTube 1.24 on the server, **You → Groups** shares videos with just your family or a few friends, as on
+the website (see [Uploading and Editing](Uploading-and-Editing.md)):
+
+- **Make a group**, then add people by their username here or send them the **join link** (Copy or Share). A new
+  link stops the old one; **Turn off** stops joining by link. The owner renames or deletes the group; anyone else
+  can leave it.
+- **Only for <group>** is a visibility choice in Upload and in a video's details. Those videos stay off Home,
+  search and the network; the group's page lists them. **Watch together** is hidden for them, and **Share** reminds
+  you that only the group's members can open the link.
+- **Join links** (`/groups/join/…`) from clips.irc.so, clips.quitlyingto.us and clips.6697.pro open in the app; a
+  link from another server than the one you're using offers to switch first. Group notifications open the group.
+- **Upload → Import them on the website** opens the website's import page for bringing videos over from YouTube
+  or Immich.
 
 ## Admin and moderation
 
@@ -334,7 +355,7 @@ by the server's admin, and the upload screen shows it.
 ## Links that open in the app
 
 Links to videos (`/watch/…`, `/n/…`), Shorts (`/shorts/…`), channels (`/c/…`), playlists (`/playlist/…`), watch parties
-(`/party/…`), live streams (`/live/…`) and comparisons (`/compare?…`) on clips.irc.so, clips.quitlyingto.us and clips.6697.pro offer to open
+(`/party/…`), live streams (`/live/…`), comparisons (`/compare?…`) and group join links (`/groups/join/…`) on clips.irc.so, clips.quitlyingto.us and clips.6697.pro offer to open
 in the app. A link from a server other than the one you're using opens from that server, signed out, with a
 **Switch** button to move over and sign in there.
 

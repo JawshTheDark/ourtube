@@ -9,7 +9,7 @@ import { Api } from '@/lib/api';
 import { ApiScope, useLinkedApi, withServer } from '@/lib/scope';
 import { useSession } from '@/lib/session';
 import { useLayout } from '@/lib/layout';
-import { seekCurrent, useOnePlayerAtATime } from '@/lib/playback';
+import { seekCurrent, useOnePlayerAtATime, usePlayedView } from '@/lib/playback';
 import { useDisplayed, usePrefs } from '@/lib/prefs';
 import { ago, bytes, compact, duration, hostOf, plural } from '@/lib/format';
 import { downloadAndShare } from '@/lib/download';
@@ -76,11 +76,6 @@ export function WatchScreen({ id, peer, remote, server: serverParam, list, shuff
           commentsPath: `/network/videos/${peer}/${encodeURIComponent(remote!)}`,
           shareUrl: v.remote.watch_url || `${base}/n/${peer}/${encodeURIComponent(remote!)}`,
         });
-        // The view counts on the server that hosts the video, anonymously, like the website does. (Network videos all
-        // say origin_type "activitypub" since the network moved to ActivityPub, so this doesn't check it.)
-        if (v.remote.peer_url) {
-          fetch(`${v.remote.peer_url}/api/videos/${encodeURIComponent(v.remote.remote_id)}/view`, { method: 'POST', credentials: 'omit' }).catch(() => {});
-        }
         api
           .get<{ chapters: Chapter[] }>(`/network/videos/${peer}/${encodeURIComponent(remote!)}/chapters`)
           .then((c) => setRemoteChapters(c.chapters || []))
@@ -104,6 +99,7 @@ export function WatchScreen({ id, peer, remote, server: serverParam, list, shuff
           commentsPath: `/videos/${encodeURIComponent(id!)}`,
           shareUrl: `${base}/watch/${encodeURIComponent(id!)}`,
         });
+        // Opening it records the history; the view itself counts once most of it was played (countView below).
         if (video.status === 'ready') api.post(`/videos/${encodeURIComponent(id!)}/view`, { anonymous, from: 'app' }).catch(() => {});
       }
     } catch (e: any) {
@@ -137,6 +133,23 @@ export function WatchScreen({ id, peer, remote, server: serverParam, list, shuff
     [api, id, signedIn, isRemote, anonymous],
   );
   useEffect(() => () => reportProgress(position.current, true), [reportProgress]);
+
+  // The view counts once 75% of the video was played (OurTube 1.25), on the server that hosts it: a network video's
+  // anonymously, like the website does. (Network videos all say origin_type "activitypub" since the network moved to
+  // ActivityPub, so this doesn't check it.)
+  const remoteInfo = data?.video.remote;
+  const countView = useCallback(
+    (played: number) => {
+      if (isRemote) {
+        if (remoteInfo?.peer_url) {
+          fetch(`${remoteInfo.peer_url}/api/videos/${encodeURIComponent(remoteInfo.remote_id)}/view?played=${played}`, { method: 'POST', credentials: 'omit' }).catch(() => {});
+        }
+      } else if (id) {
+        api.post(`/videos/${encodeURIComponent(id)}/view`, { played, anonymous, from: 'app' }).catch(() => {});
+      }
+    },
+    [api, id, isRemote, remoteInfo, anonymous],
+  );
   const onTime = useCallback(
     (t: number) => {
       reportProgress(t);
@@ -331,7 +344,7 @@ export function WatchScreen({ id, peer, remote, server: serverParam, list, shuff
         <ServerTag remote={isRemote ? v.remote : null} style={{ marginTop: 6, marginBottom: 2 }} />
         <Text style={s.meta}>
           {`${plural(v.views, 'view')} · ${ago(v.published_at || v.created_at)}`}
-          {v.visibility !== 'public' ? ` · ${v.draft ? 'draft' : v.visibility}` : ''}
+          {v.visibility !== 'public' ? ` · ${v.draft ? 'draft' : v.visibility === 'group' ? `only for ${v.group?.name || 'a group'}` : v.visibility}` : ''}
           {'  '}
           <Text style={{ color: colors.text, fontWeight: '600' }}>{expanded ? 'less' : '...more'}</Text>
         </Text>
@@ -374,8 +387,16 @@ export function WatchScreen({ id, peer, remote, server: serverParam, list, shuff
           </View>
         )}
         {(isRemote || (v.status === 'ready' && !!v.video_url)) && <Button title="Save" icon="playlist-add" small onPress={save} />}
-        {(isRemote || (v.status === 'ready' && !!v.video_url && v.visibility !== 'private')) && <Button title="Watch together" icon="groups" small onPress={watchTogether} />}
-        <Button title="Share" icon="share" small onPress={() => Share.share({ message: data.shareUrl }).catch(() => {})} />
+        {(isRemote || (v.status === 'ready' && !!v.video_url && v.visibility !== 'private' && v.visibility !== 'group')) && <Button title="Watch together" icon="groups" small onPress={watchTogether} />}
+        <Button
+          title="Share"
+          icon="share"
+          small
+          onPress={() => {
+            if (v.visibility === 'group') toast(`Only the people in ${v.group?.name || 'the group'} can open the link`);
+            Share.share({ message: data.shareUrl }).catch(() => {});
+          }}
+        />
         {v.can_edit && !foreign && <Button title="Details" icon="edit" small onPress={() => router.push(`/studio/edit/${encodeURIComponent(v.id)}` as any)} />}
         {v.can_edit && !foreign && !isRemote && v.status === 'ready' && <Button title="Editor" icon="content-cut" small onPress={() => router.push(`/studio/editor/${encodeURIComponent(v.id)}` as any)} />}
         {tools && <Button title="Clip" icon="content-cut" small onPress={() => openTool('clip')} />}
@@ -483,6 +504,7 @@ export function WatchScreen({ id, peer, remote, server: serverParam, list, shuff
             maxHeight={wide ? layout.height * 0.8 : undefined}
             resumeAt={signedIn && !list ? v.resume_at || 0 : 0}
             onTime={onTime}
+            onPlayed={countView}
             fineTime={chapters.length > 0}
             onEnd={() => {
               const n = playlistNav.current;
@@ -521,6 +543,7 @@ function Player({
   width: paneWidth,
   maxHeight,
   fineTime,
+  onPlayed,
 }: {
   video: Video;
   api: Api;
@@ -529,8 +552,10 @@ function Player({
   onEnd?: () => void;
   width?: number;
   maxHeight?: number;
-  /** Report the time a few times a second (for chapters), not every five seconds. */
+  /** Report the time a few times a second (for chapters), not every half second. */
   fineTime?: boolean;
+  /** Most of the video was played (OurTube 1.25 counts the view then), with the seconds played. */
+  onPlayed?: (seconds: number) => void;
 }) {
   const window = useWindowDimensions();
   const width = paneWidth ?? window.width;
@@ -551,11 +576,12 @@ function Player({
     [],
   );
   const player = useVideoPlayer(source, (p) => {
-    p.timeUpdateEventInterval = 5;
+    p.timeUpdateEventInterval = 0.5;
     p.play();
   });
   // Opening another video from here pauses this one; Back picks it up again.
   useOnePlayerAtATime(player);
+  usePlayedView(player, onPlayed ? video.id : null, (played) => onPlayed?.(played));
   const resumed = useRef(false);
   useEventListener(player, 'statusChange', ({ status }) => {
     if (status === 'readyToPlay' && !resumed.current) {
@@ -591,7 +617,7 @@ function Player({
   }, [api, track]);
   const fine = !!fineTime || cues.length > 0 || (segments.length > 0 && skipMode !== 'off');
   useEffect(() => {
-    player.timeUpdateEventInterval = fine ? 0.25 : 5;
+    player.timeUpdateEventInterval = fine ? 0.25 : 0.5;
   }, [player, fine]);
   useEventListener(player, 'timeUpdate', ({ currentTime: t }) => {
     onTime(t);

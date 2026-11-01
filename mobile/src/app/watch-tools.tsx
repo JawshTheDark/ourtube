@@ -99,7 +99,8 @@ function ClipPanel({ api, video, source }: { api: Api; video: Video; source: { l
   const [tab, setTab] = useState<'clip' | 'gif' | 'mp4'>(canClip ? 'clip' : 'gif');
   const [range, setRange] = useState(() => (source && source.end > source.start ? { start: source.start, end: source.end } : rangeBefore(now(), length)));
   const [title, setTitle] = useState(`${video.title} (clip)`.slice(0, 120));
-  const [visibility, setVisibility] = useState<Visibility>(video.visibility === 'private' ? 'private' : 'public');
+  // A clip of a private or group video starts private, so it isn't shown to more people than the video.
+  const [visibility, setVisibility] = useState<Visibility>(video.visibility === 'private' || video.visibility === 'group' ? 'private' : 'public');
   const [mode, setMode] = useState<'exact' | 'fast'>('exact');
   const [width, setWidth] = useState('480');
   const [muted, setMuted] = useState(false);

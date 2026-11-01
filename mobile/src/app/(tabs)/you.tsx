@@ -62,6 +62,7 @@ export default function You() {
             <Row icon="history" label="History" onPress={() => router.push('/library/history')} />
             <Row icon="watch-later" label="Watch later" onPress={() => router.push('/playlist/watch-later')} />
             <Row icon="playlist-play" label="Playlists" onPress={() => router.push('/library/playlists')} />
+            <Row icon="family-restroom" label="Groups" hint="Share videos with just your family or friends" onPress={() => router.push('/groups' as any)} />
             <Row icon="groups" label="Watch parties" hint="Parties you host" onPress={() => router.push('/library/parties')} />
             <Row icon="thumb-up-off-alt" label="Liked videos" onPress={() => router.push('/library/liked')} />
             <Row icon="subscriptions" label="Subscriptions" onPress={() => router.push('/library/subscriptions')} />

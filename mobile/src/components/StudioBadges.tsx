@@ -21,6 +21,7 @@ export function StatusBadge({ video: v }: { video: Video }) {
 /** Public, unlisted or private; a draft says so instead. */
 export function VisibilityBadge({ video: v }: { video: Video }) {
   if (v.draft) return <Badge text="Draft" tone="warn" />;
+  if (v.visibility === 'group') return <Badge text={`Group: ${v.group?.name || 'a group'}`} tone="accent" />;
   return <Badge text={v.visibility[0].toUpperCase() + v.visibility.slice(1)} />;
 }
 

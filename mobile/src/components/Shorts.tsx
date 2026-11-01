@@ -7,14 +7,14 @@ import { useVideoPlayer, VideoView, type VideoSource } from 'expo-video';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Api, videoHref } from '@/lib/api';
 import { compact, hostOf } from '@/lib/format';
-import { useOnePlayerAtATime } from '@/lib/playback';
+import { useOnePlayerAtATime, usePlayedView } from '@/lib/playback';
 import { knownServers, openChannelLink } from '@/lib/profiles';
 import { ApiScope, useLinkedApi, withServer } from '@/lib/scope';
 import { useSession } from '@/lib/session';
 import { colors } from '@/lib/theme';
 import type { Video } from '@/lib/types';
 import { usePaged } from '@/lib/usePaged';
-import { useDisplayed } from '@/lib/prefs';
+import { useDisplayed, usePrefs } from '@/lib/prefs';
 import { ServerTag } from './ServerTag';
 import { Text } from './Text';
 import { Avatar, Empty, Icon, IconButton, Loading, toast } from './ui';
@@ -49,7 +49,7 @@ async function loadDetail(api: Api, v: Pick<Video, 'id' | 'remote'>): Promise<{ 
 }
 
 /** The player of the Short on screen and of the ones beside it. Only the visible one plays; it loops. */
-function ShortPlayer({ v, api, active, muted }: { v: Video; api: Api; active: boolean; muted: boolean }) {
+function ShortPlayer({ v, api, active, muted, onPlayed }: { v: Video; api: Api; active: boolean; muted: boolean; onPlayed: (v: Video, seconds: number) => void }) {
   const url = api.abs(v.video_url || v.hls_url)!;
   const source = useMemo<VideoSource>(
     () => ({ uri: url, headers: api.authFor(url), contentType: v.video_url ? 'progressive' : 'hls', metadata: { title: v.title, artist: v.uploader.display_name } }),
@@ -61,6 +61,8 @@ function ShortPlayer({ v, api, active, muted }: { v: Video; api: Api; active: bo
     p.timeUpdateEventInterval = 0.25;
   });
   useOnePlayerAtATime(player, { active });
+  // The view counts once most of the Short was played; looping round adds the parts not played yet.
+  usePlayedView(player, active ? shortKey(v) : null, (played) => onPlayed(v, played));
   const [progress, setProgress] = useState(0);
   const [paused, setPaused] = useState(false); // paused by a tap
   useEffect(() => {
@@ -140,10 +142,11 @@ type SlideProps = {
   onShare: () => void;
   onFull: () => void;
   onChannel: () => void;
+  onPlayed: (v: Video, seconds: number) => void;
 };
 
 /** One Short: the video in a frame of its own shape (no bars beside it), who made it, and the side buttons. */
-const ShortSlide = memo(function ShortSlide({ v, api, W, H, active, near, muted, detail, bottomInset, onLike, onComments, onShare, onFull, onChannel }: SlideProps) {
+const ShortSlide = memo(function ShortSlide({ v, api, W, H, active, near, muted, detail, bottomInset, onLike, onComments, onShare, onFull, onChannel, onPlayed }: SlideProps) {
   const aspect = v.width && v.height ? v.width / v.height : 9 / 16;
   let fw = W;
   let fh = W / aspect;
@@ -161,7 +164,7 @@ const ShortSlide = memo(function ShortSlide({ v, api, W, H, active, near, muted,
     <View style={{ width: W, height: H, alignItems: 'center', justifyContent: 'center', backgroundColor: '#000' }}>
       <View style={{ width: fw, height: fh, backgroundColor: '#000' }}>
         {thumb && <Image source={{ uri: thumb }} style={StyleSheet.absoluteFill} contentFit="cover" />}
-        {near && !!(v.video_url || v.hls_url) && <ShortPlayer v={v} api={api} active={active} muted={muted} />}
+        {near && !!(v.video_url || v.hls_url) && <ShortPlayer v={v} api={api} active={active} muted={muted} onPlayed={onPlayed} />}
       </View>
       {active && (
         <>
@@ -220,6 +223,19 @@ export function ShortsScreen({ id, peer, remote, server, scope: scopeParam }: Pr
   const [muted, setMuted] = useState(false);
   const [size, setSize] = useState<{ W: number; H: number } | null>(null);
   const counted = useRef(new Set<string>());
+  // Anonymous mode (Settings → Watching): views count as a signed-out viewer and nothing goes into the history.
+  const anonymous = usePrefs().prefs.anonymous === 'on';
+  // A Short's view counts on the server that hosts it (a network one's anonymously, like the website).
+  const countView = useCallback(
+    (v: Video, played: number) => {
+      if (v.remote?.peer_url) {
+        fetch(`${v.remote.peer_url}/api/videos/${encodeURIComponent(v.remote.remote_id)}/view?played=${played}`, { method: 'POST', credentials: 'omit' }).catch(() => {});
+      } else if (!v.remote) {
+        api.post(`/videos/${encodeURIComponent(v.id)}/view`, { played, anonymous, from: 'app' }).catch(() => {});
+      }
+    },
+    [api, anonymous],
+  );
   const listRef = useRef<FlatList<Video>>(null);
   const anchor = useRef<number | null>(null);
 
@@ -256,13 +272,10 @@ export function ShortsScreen({ id, peer, remote, server, scope: scopeParam }: Pr
         .then(({ detail }) => setDetails((x) => ({ ...x, [key]: detail })))
         .catch(() => {});
     }
+    // Opening a Short records the history; its view counts once most of it was played (countView).
     if (!counted.current.has(key)) {
       counted.current.add(key);
-      if (current.remote?.peer_url) {
-        fetch(`${current.remote.peer_url}/api/videos/${encodeURIComponent(current.remote.remote_id)}/view`, { method: 'POST', credentials: 'omit' }).catch(() => {});
-      } else if (!current.remote) {
-        api.post(`/videos/${encodeURIComponent(current.id)}/view`, {}).catch(() => {});
-      }
+      if (!current.remote) api.post(`/videos/${encodeURIComponent(current.id)}/view`, { anonymous, from: 'app' }).catch(() => {});
     }
     if (active >= list.length - 3 && paged.hasMore && !paged.loading) paged.loadMore();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -348,6 +361,7 @@ export function ShortsScreen({ id, peer, remote, server, scope: scopeParam }: Pr
                 onShare={share}
                 onFull={openFull}
                 onChannel={openChannel}
+                onPlayed={countView}
               />
             )}
             extraData={`${active}:${muted}:${d?.my_like}:${d?.likes}:${d?.comments}`}
