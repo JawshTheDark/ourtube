@@ -10,7 +10,19 @@
 
 ## Updating a server
 
-With the code checked out on the server:
+GitHub builds an image for every release (`ghcr.io/jawshthedark/ourtube`, x86 and ARM, tagged `latest` and with
+the version). With it:
+
+```bash
+cd ~/cliptube
+docker compose pull
+docker compose up -d
+```
+
+Dockge, Portainer and other stack managers do the same with their **update** button. To stay on a version, set
+`OURTUBE_IMAGE=ghcr.io/jawshthedark/ourtube:1.23.0` in `.env`.
+
+Or build the code yourself, from a checkout:
 
 ```bash
 cd ~/cliptube
@@ -22,6 +34,13 @@ Database changes are applied automatically when the new version starts. Before i
 copies the database to `data/backups/pre-migration-<time>.db` (the 10 most recent are kept).
 
 Your `.env`, `docker-compose.override.yml` and `data/` are never touched by an update.
+
+**Keep your changes out of `docker-compose.yml`.** A published port, another network, a GPU: put them in
+`docker-compose.override.yml` next to it, which Compose merges in on its own (see
+[Docker on its own](Installation.md#docker-on-its-own) for an example). `git pull` doesn't overwrite a file you
+changed, but when that file also changed in the new version it stops with *Your local changes would be
+overwritten by merge*. Already edited it? Move your changes to the override file, then
+`git checkout docker-compose.yml` and pull.
 
 ## Deploying from another machine
 
@@ -57,9 +76,12 @@ Go back to the image that ran before the last deploy:
 
 ```bash
 cd ~/cliptube
-docker tag cliptube:rollback cliptube:latest
+docker tag cliptube:rollback ghcr.io/jawshthedark/ourtube:latest    # or the image OURTUBE_IMAGE names
 docker compose up -d --no-build
 ```
+
+With the published image you can also go back by version: set `OURTUBE_IMAGE=ghcr.io/jawshthedark/ourtube:<version>`
+in `.env`, then `docker compose up -d`.
 
 If the newer version changed the database, put back the copy made before it started as well. Anything written
 since that copy (new uploads, comments) is lost from the database, so do this only if you need to:

@@ -177,9 +177,12 @@ git clone https://github.com/JawshTheDark/ourtube.git
 cd ourtube
 mkdir -p data
 docker network create proxy-net    # the network your reverse proxy shares with OurTube (once)
-docker compose up -d --build
+docker compose up -d               # the published image (x86 and ARM); add --build to build it yourself
 docker logs cliptube               # shows the one-time setup code
 ```
+
+Using Dockge or Portainer? Paste the compose file from
+[Installation](docs/wiki/Installation.md#dockge-portainer-and-other-stack-managers) into a new stack; no code needed.
 
 Then:
 
@@ -264,8 +267,11 @@ Every command: [Admin CLI](docs/wiki/Admin-CLI.md).
 ## Updating
 
 ```bash
-git pull && docker compose up -d --build
+docker compose pull && docker compose up -d    # or the update button in Dockge or Portainer
 ```
+
+Or, from your checkout, `git pull && docker compose up -d --build`. Keep your own changes in
+`docker-compose.override.yml`, not `docker-compose.yml`, so a pull never trips over them.
 
 Or deploy from another machine over SSH. The script backs up the database, keeps the old image for rollback,
 rebuilds and waits for the health check:

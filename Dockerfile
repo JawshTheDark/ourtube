@@ -8,6 +8,8 @@ RUN npm run build
 
 # ---- runtime -------------------------------------------------------------
 FROM node:24-bookworm-slim
+LABEL org.opencontainers.image.source="https://github.com/JawshTheDark/ourtube" \
+      org.opencontainers.image.description="OurTube: a self-hosted YouTube for your videos, Shorts and live streams"
 ENV NODE_ENV=production \
     DATA_DIR=/data \
     PORT=3000 \

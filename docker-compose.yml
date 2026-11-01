@@ -1,14 +1,18 @@
 # Production setup behind Nginx Proxy Manager (or any reverse proxy on a shared docker network).
 #
-#   mkdir -p data && docker compose up -d --build
+#   mkdir -p data && docker compose up -d        # the published image (x86 and ARM)
+#   docker compose pull && docker compose up -d  # update it (the update button in Dockge or Portainer does this)
+#   docker compose up -d --build                 # or build this checkout yourself
 #
 # No port is published on the host: the proxy reaches the app over the shared network as cliptube:3000.
-# To run it standalone instead, add `ports: ["3000:3000"]` and drop the networks section.
+# Don't edit this file for your own changes (a port, another network, a GPU): put them in
+# docker-compose.override.yml next to it, which Compose merges in and updates never touch.
 
 services:
   cliptube:
+    # GitHub builds this for every release. OURTUBE_IMAGE in .env pins a version (ghcr.io/jawshthedark/ourtube:1.23.0).
+    image: ${OURTUBE_IMAGE:-ghcr.io/jawshthedark/ourtube:latest}
     build: .
-    image: cliptube:latest
     container_name: cliptube
     restart: unless-stopped
     # Match the owner of ./data so uploads are written as your user, not root.

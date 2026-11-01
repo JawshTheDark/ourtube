@@ -7,8 +7,8 @@
 # rebuilds and restarts the container, and waits for the health check.
 # Expects the app in ~/cliptube on the host with the docker-compose.yml from this repo.
 #
-# Roll back on a host with:
-#   docker tag cliptube:rollback cliptube:latest && docker compose up -d --no-build
+# Roll back on a host with (or the image OURTUBE_IMAGE names in its .env):
+#   docker tag cliptube:rollback ghcr.io/jawshthedark/ourtube:latest && docker compose up -d --no-build
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -33,7 +33,7 @@ for HOST in "$@"; do
     if docker ps --format '{{.Names}}' | grep -qx cliptube; then
       docker exec cliptube node -e \"const {DatabaseSync}=require('node:sqlite');new DatabaseSync('/data/cliptube.db').exec(\\\"VACUUM INTO '/data/backups/pre-deploy-$STAMP.db'\\\")\"
       echo '    database backed up to data/backups/pre-deploy-$STAMP.db'
-      docker tag cliptube:latest cliptube:rollback
+      docker tag \"\$(docker inspect -f '{{.Config.Image}}' cliptube)\" cliptube:rollback
       echo '    previous image tagged cliptube:rollback'
     fi
     ls -1t data/backups/pre-deploy-*.db 2>/dev/null | tail -n +11 | xargs -r rm -f"

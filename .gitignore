@@ -3,3 +3,5 @@ data/
 web/dist/
 .env
 *.log
+docker-compose.override.yml
+compose.override.yaml

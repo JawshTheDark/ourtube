@@ -40,6 +40,13 @@ Signed in, videos resume where you left off (unless you paused your history). Un
 or dislike, subscribe, **Share** (with a *start at* time, or a looping range), **Compare** with another clip,
 and download the original when the uploader allows it.
 
+**Share → Embed on a website** gives the code for a player on another site (a blog, a forum, WordPress), with the
+*start at* time if you set one. In WordPress, paste the video's link into an **Embed** block: the watch page
+tells WordPress where its player is (oEmbed). If WordPress won't embed it (it limits which sites it trusts), paste
+the embed code into a **Custom HTML** block instead. The player is `/embed/<id>`, and takes `?start=<seconds>`,
+`?autoplay=1` (muted, as browsers require) and `?loop=1`. Public and unlisted videos can be embedded; private
+ones can't. Plays from embeds count as views.
+
 Times in descriptions and comments (`1:23`, `1:02:03`) are links that jump the video there. While writing a
 comment, **Add time** puts in the moment the video is at.
 

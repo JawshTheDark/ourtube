@@ -33,8 +33,9 @@ needs before it starts are environment variables.
 | `LIVE_SRT_URL` | unset | An SRT address to show streamers, such as `srt://your.site:8890` |
 
 With Docker, put these under `environment:` in a `docker-compose.override.yml`. The compose file itself reads
-`PUID`, `PGID` (the user the container runs as, default 1000) and `PROXY_NETWORK` (default `proxy-net`) from
-`.env`.
+`PUID`, `PGID` (the user the container runs as, default 1000), `PROXY_NETWORK` (default `proxy-net`) and
+`OURTUBE_IMAGE` (default `ghcr.io/jawshthedark/ourtube:latest`; set `ghcr.io/jawshthedark/ourtube:1.23.0` to stay
+on a version) from `.env`.
 
 ## Admin → Overview
 

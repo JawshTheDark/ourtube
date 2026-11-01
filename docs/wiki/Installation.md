@@ -10,6 +10,7 @@ settings you can change afterwards are in [Configuration](Configuration.md).
   - [nginx with Let's Encrypt](#nginx-with-lets-encrypt)
   - [Tunnels](#tunnels)
 - [Docker on its own](#docker-on-its-own)
+- [Dockge, Portainer and other stack managers](#dockge-portainer-and-other-stack-managers)
 - [Without Docker](#without-docker)
 - [First run](#first-run)
 - [Joining the network](#joining-the-network)
@@ -60,11 +61,15 @@ printf 'PROXY_NETWORK=my-proxy-net\nPUID=%s\nPGID=%s\n' "$(id -u)" "$(id -g)" > 
 The container runs as `PUID:PGID` and writes to `./data`, so that folder must belong to the same user
 (`sudo chown -R 1000:1000 data` if it doesn't).
 
-**3. Build and start**
+**3. Start**
 
 ```bash
-docker compose up -d --build
+docker compose up -d
 ```
+
+This runs the image GitHub builds for every release (`ghcr.io/jawshthedark/ourtube`, for x86 and ARM), so updates
+are `docker compose pull && docker compose up -d`. To build the code you checked out instead, use
+`docker compose up -d --build`.
 
 **4. Note the setup code**
 
@@ -175,11 +180,36 @@ The compose file still expects the `proxy-net` network, so create it once (`dock
 then start as before:
 
 ```bash
-docker compose up -d --build
+docker compose up -d
 ```
 
 Open `http://<server-address>:3000`. Without HTTPS everything works on the LAN except linking with other
 servers, the fediverse and web push, which need a public `https://` address.
+
+## Dockge, Portainer and other stack managers
+
+No code needed: make a new stack with this compose file, make its `data` folder (owned by `PUID:PGID`, 1000:1000
+here), and start it. The **update** button then pulls each new release, the way it does for your other stacks.
+
+```yaml
+services:
+  cliptube:
+    image: ghcr.io/jawshthedark/ourtube:latest
+    container_name: cliptube
+    restart: unless-stopped
+    user: "1000:1000"
+    environment:
+      - TRUST_PROXY=1
+      - DATA_DIR=/data
+    volumes:
+      - ./data:/data
+    ports:
+      - "3000:3000"    # or leave this out and join your reverse proxy's network (see docker-compose.yml)
+```
+
+The setup code is in the stack's log. Live streaming needs the MediaMTX service and `live/mediamtx.yml` from the
+repository (see `docker-compose.yml`). If your stack is a checkout of the repository instead, keep your changes in
+`docker-compose.override.yml` (see [Updating a server](Upgrading-and-Backups.md#updating-a-server)).
 
 ## Without Docker
 

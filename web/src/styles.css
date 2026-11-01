@@ -1661,6 +1661,22 @@ h3 {
   justify-content: space-between;
   align-items: center;
 }
+.share-embed-toggle {
+  margin-top: 12px;
+}
+.share-embed {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+}
+.share-embed textarea {
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-size: 12px;
+  resize: vertical;
+}
+.share-embed .btn {
+  justify-self: start;
+}
 .share-row {
   display: flex;
   gap: 8px;

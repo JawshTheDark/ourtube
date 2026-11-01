@@ -29,6 +29,7 @@ import { mailConfigured } from './mail.js';
 import { captureLogs, diagnosticsRouter } from './diagnostics.js';
 import { startUpdateChecks } from './updates.js';
 import { feedsRouter } from './feeds.js';
+import { embedRouter } from './embed.js';
 import { searchRouter, startSearchSync } from './search.js';
 import { recommendRouter } from './recommend.js';
 import { analyticsRouter } from './stats.js';
@@ -132,6 +133,7 @@ app.use('/api/admin/diagnostics', diagnosticsRouter); // Admin -> Debugging
 app.use('/api/admin', adminRouter);
 app.use('/media', watchingMediaRouter); // HLS, federation MP4, captions, originals
 app.use('/media', mediaRouter);
+app.use(embedRouter); // /embed/<id> players for other sites, and /api/oembed
 app.use('/api', (req, res) => res.status(404).json({ error: 'Not found' }));
 app.use('/feeds', feedsRouter); // RSS and Atom
 app.use(apNegotiation); // /watch/<id> and /c/<name> as ActivityPub JSON for fediverse servers
@@ -191,6 +193,10 @@ if (fs.existsSync(indexFile)) {
         const alt = apEnabled() && v.visibility === 'public' && v.federate && !v.moderation_status
           ? `<link rel="alternate" type="application/activity+json" href="${escapeHtml(`${apBase(req)}/ap/videos/${v.id}`)}">\n    `
           : '';
+        // oEmbed discovery: pasting the link into WordPress (or anything that speaks oEmbed) embeds the player.
+        const oembed = !v.moderation_status
+          ? `<link rel="alternate" type="application/json+oembed" href="${escapeHtml(`${base}/api/oembed?url=${encodeURIComponent(`${base}${req.path}`)}&format=json`)}" title="${escapeHtml(v.title)}">\n    `
+          : '';
         const og = ogTags(
           {
             url: `${base}/watch/${v.id}`,
@@ -203,7 +209,7 @@ if (fs.existsSync(indexFile)) {
           },
           settings,
         );
-        html = html.replace('</head>', `    ${alt}${og}</head>`);
+        html = html.replace('</head>', `    ${alt}${oembed}${og}</head>`);
       }
     }
     // A clip from another server in the network, shared from here: its card says where it's from, and the

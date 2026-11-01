@@ -180,6 +180,18 @@ function ShareDialog({ video, videoRef, loop, onClose }) {
     if (ok) onClose();
   };
 
+  // The player for other sites (server/embed.js), sized to the video's shape.
+  const [embed, setEmbed] = useState(false);
+  const vertical = video.height > video.width;
+  const ew = vertical ? Math.round((560 * video.width) / video.height) : 560;
+  const eh = vertical ? 560 : Math.round((560 * video.height) / video.width) || 315;
+  const embedSrc = `${window.location.origin}/embed/${video.id}${(withTime || withEnd) && start > 0 ? `?start=${urlSeconds(start)}` : ''}`;
+  const embedCode = `<iframe src="${embedSrc}" width="${ew}" height="${eh}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen title="${video.title.replace(/[&"<>]/g, (c) => ({ '&': '&amp;', '"': '&quot;', '<': '&lt;', '>': '&gt;' })[c])}"></iframe>`;
+  const copyEmbed = async () => {
+    const ok = await copyText(embedCode);
+    toast(ok ? 'Embed code copied' : 'Could not copy automatically, select the code and copy it');
+  };
+
   return (
     <div className="modal-scrim" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Share">
@@ -209,6 +221,24 @@ function ShareDialog({ video, videoRef, loop, onClose }) {
           </div>
         )}
         {withEnd && end <= start && <p className="error">The end has to come after the start.</p>}
+        {video.visibility !== 'private' && (
+          <>
+            <button className="btn btn-ghost share-embed-toggle" onClick={() => setEmbed((e) => !e)} aria-expanded={embed}>
+              <Icon name="code" /> Embed on a website
+            </button>
+            {embed && (
+              <div className="share-embed">
+                <textarea className="textarea" readOnly rows={3} value={embedCode} onFocus={(e) => e.target.select()} aria-label="Embed code" />
+                <button className="btn" onClick={copyEmbed}>
+                  Copy embed code
+                </button>
+                <p className="hint">
+                  Paste it into a web page, or WordPress&apos;s Custom HTML block. In WordPress you can also paste the link itself into an Embed block.
+                </p>
+              </div>
+            )}
+          </>
+        )}
         <p className="hint">
           {video.visibility === 'private'
             ? 'This video is private: only you and admins can open the link.'
