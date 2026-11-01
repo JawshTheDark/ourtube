@@ -2,7 +2,7 @@
   "expo": {
     "name": "OurTube",
     "slug": "cliptube",
-    "version": "1.7.0",
+    "version": "1.7.1",
     "scheme": "cliptube",
     "orientation": "default",
     "icon": "./assets/icon.png",
@@ -14,7 +14,7 @@
     },
     "android": {
       "package": "so.irc.cliptube",
-      "versionCode": 10,
+      "versionCode": 11,
       "adaptiveIcon": {
         "backgroundColor": "#0e0d16",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -179,6 +179,39 @@
               "scheme": "https",
               "host": "clips.6697.pro",
               "pathPrefix": "/compare"
+            }
+          ]
+        },
+        {
+          "action": "SEND",
+          "category": [
+            "DEFAULT"
+          ],
+          "data": [
+            {
+              "mimeType": "video/*"
+            }
+          ]
+        },
+        {
+          "action": "SEND_MULTIPLE",
+          "category": [
+            "DEFAULT"
+          ],
+          "data": [
+            {
+              "mimeType": "video/*"
+            }
+          ]
+        },
+        {
+          "action": "SEND",
+          "category": [
+            "DEFAULT"
+          ],
+          "data": [
+            {
+              "mimeType": "text/plain"
             }
           ]
         }

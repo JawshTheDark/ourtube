@@ -9,7 +9,8 @@ import { AppHeader } from '@/components/AppHeader';
 import { Button, Empty, Icon, toast } from '@/components/ui';
 import { emptyFields, VideoForm, type VideoFields } from '@/components/VideoForm';
 import { useSession } from '@/lib/session';
-import { bytes } from '@/lib/format';
+import { bytes, hostOf } from '@/lib/format';
+import { dropIncomingVideo, useIncomingVideo } from '@/lib/share';
 import { colors } from '@/lib/theme';
 import { readable } from '@/lib/layout';
 import type { Video } from '@/lib/types';
@@ -21,13 +22,17 @@ type Stage =
   | { kind: 'processing'; video: Video }
   | { kind: 'done'; video: Video };
 
+/** A title from a file name: "my_clip_2.mp4" -> "my clip 2". */
+const titleFrom = (name: string | null | undefined) => (name || '').replace(/\.[^.]+$/, '').replace(/[_]+/g, ' ').trim().slice(0, 120);
+
 function KeepAwake() {
   useKeepAwake();
   return null;
 }
 
 export default function Upload() {
-  const { api, user, site, server } = useSession();
+  const { api, user, site, server, servers } = useSession();
+  const incoming = useIncomingVideo();
   const [file, setFile] = useState<Picked | null>(null);
   const [fields, setFields] = useState<VideoFields>(emptyFields);
   const [stage, setStage] = useState<Stage>({ kind: 'form' });
@@ -40,6 +45,28 @@ export default function Upload() {
     setFields(emptyFields);
     setStage({ kind: 'form' });
   }, [server, user?.id]);
+
+  // A new share replaces the "Your video is up" screen; processing carries on on the server.
+  useEffect(() => {
+    if (incoming && (stage.kind === 'done' || stage.kind === 'processing')) setStage({ kind: 'form' });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [incoming]);
+
+  // A video shared from another app (Share → OurTube), once someone is signed in. It goes to the server in use.
+  useEffect(() => {
+    if (!incoming || !user || stage.kind !== 'form') return;
+    const f = incoming.file;
+    const max = (site?.max_upload_mb || 0) * 1024 * 1024;
+    if (max && f.size && f.size > max) {
+      setFile(null);
+      setError(`"${f.name || 'That video'}" is ${bytes(f.size)}. This server takes up to ${bytes(max)}.`);
+      return;
+    }
+    setError(null);
+    setFile({ uri: f.uri, name: f.name || 'video.mp4', size: f.size, type: f.type || 'video/mp4', lastModified: f.lastModified });
+    setFields((x) => ({ ...x, title: titleFrom(f.name) }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [incoming, user?.id, server, stage.kind]);
 
   // After the upload, follow processing until the video is ready.
   useEffect(() => {
@@ -60,7 +87,7 @@ export default function Upload() {
     return (
       <View style={{ flex: 1, backgroundColor: colors.bg }}>
         <AppHeader title="Upload" />
-        <Empty icon="file-upload" title="Sign in to upload videos">
+        <Empty icon="file-upload" title={incoming ? `Sign in to upload "${incoming.file.name || 'the shared video'}"` : 'Sign in to upload videos'}>
           <View style={{ marginTop: 8 }}>
             <Button title="Sign in" kind="primary" onPress={() => router.push('/login')} />
           </View>
@@ -80,13 +107,15 @@ export default function Upload() {
       setError(`That file is ${bytes(a.size)}. This server takes up to ${bytes(max)}.`);
       return;
     }
+    dropIncomingVideo();
     setFile({ uri: a.uri, name: a.name || 'video.mp4', size: a.size ?? null, type: a.mimeType || 'video/mp4', lastModified: a.lastModified ?? null });
-    if (!fields.title) setFields((f) => ({ ...f, title: (a.name || '').replace(/\.[^.]+$/, '').replace(/[_]+/g, ' ').trim().slice(0, 120) }));
+    if (!fields.title) setFields((f) => ({ ...f, title: titleFrom(a.name) }));
   };
 
   const start = async () => {
     if (!file) return;
     setError(null);
+    dropIncomingVideo();
     setStage({ kind: 'uploading', sent: 0, total: file.size || 0 });
     // In pieces that survive a dropped connection (OurTube 1.10+), or in one request on older servers.
     const job = api.uploadVideo<{ video: Video }>(
@@ -186,6 +215,11 @@ export default function Upload() {
           <Button title="Choose a video" kind="accent" icon="video-library" onPress={pick} />
         )}
         {!!error && <Text style={{ color: colors.err }}>{error}</Text>}
+        {!!file && !!incoming && file.uri === incoming.file.uri && (
+          <Text style={s.hint}>
+            {`Shared from another app${incoming.skipped ? `; one video goes up at a time, so the other ${incoming.skipped === 1 ? 'one was' : `${incoming.skipped} were`} left out` : ''}. It goes to ${hostOf(server)}${servers.length > 1 ? ' (switch servers under You → Servers)' : ''}.`}
+          </Text>
+        )}
         {file && (
           <>
             <VideoForm value={fields} onChange={setFields} />

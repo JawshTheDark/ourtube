@@ -1,0 +1,7 @@
+{
+  "name": "share-intent",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Videos shared to OurTube from other apps (Android share sheet)",
+  "main": "index.ts"
+}

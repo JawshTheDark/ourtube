@@ -1,37 +1,9 @@
-OurTube for Android 1.7.0: the website, in the app: admin pages, settings, the Studio and timeline editor, and the watch page's tools.
+OurTube for Android 1.7.1: Share → OurTube.
 
 **Install:** download the `.apk` below on your phone or tablet and open it. It installs over earlier versions and keeps your servers and sign-ins.
 
-Admins and moderators now have the website's admin area under **You → Admin** (moderators see **You → Moderation**), with the same tabs:
+- **Upload from other apps.** Share a video from Gallery, Files, Google Photos or Immich and pick OurTube: Upload opens with the video chosen and the title filled in from the file name. The video is read where it is, not copied. If you aren't signed in, sign in and the video is still waiting.
+- In Immich, use **Share**, which sends the video itself. **Share link** sends only a link, and OurTube says so.
+- Sharing several videos at once uploads the first one. A file that isn't a video, or one OurTube can't open, gets a clear message.
 
-- **Overview:** the update notice, live stats (people, videos, views, storage, the processing queue), every site setting, the list of people (roles, approval, suspension and bans with a reason, storage quotas, strikes, deleting accounts), invite links, and email (SMTP) with a test send.
-- **Moderation:** reports with their actions and private notes, held comments, appeals, the audit log, and comment spam controls.
-- **Games:** add, rename, merge and delete games, upload artwork, and pick covers, title logos and banners from SteamGridDB.
-- **Legal:** the legal page, repeat-infringer rules, recording takedown notices and the takedown log.
-- **Network:** joining or running a network, hub settings and members, direct peers, who may peer, block lists, fediverse sharing, ActivityPub, following whole servers, the PeerTube directory, blocked instances and hidden videos.
-- **Debugging:** versions and the update check, the server, FFmpeg, storage, the database, the network, the job queue and recent errors, with the whole report to copy.
-
-**You → Settings** now has the website's settings, in the same tabs:
-
-- **Channel:** your picture, name and description, support links, live streaming (the OBS server and stream key, title, game, who can watch), comments on your videos and blocked words.
-- **Notifications:** what reaches you by push and by email, and your email address.
-- **Watching:** density, skipping marked parts, community titles (now off unless you turn them on, as on the website), captions, keeping Shorts off Home, pausing the history, and anonymous mode.
-- **Account:** password, storage, exporting your data, moving your channel to another site, and deleting your account.
-- **Apps:** API keys and webhooks.
-
-**Forgot your password?** works in the app, and password-reset and email-confirmation links open in it.
-
-The **timeline editor** is in the app: split, delete and trim parts on a filmstrip with the waveform, preview the edit, set the volume and fades, pick a thumbnail frame, clip moments from the unedited recording, undo and redo, then save to render it.
-
-**You → Your videos** is now the website's Studio: each video's state, retrying and deleting, every detail field (who may comment, downloading the original, sharing with the network), a custom thumbnail, skippable parts, captions, community suggestions, analytics with per-day charts and retention, and comments to review.
-
-On the watch page:
-
-- **Chapters** from the description (or a PeerTube video's own) as cards you can tap.
-- **Skippable parts** are skipped, offered with a Skip button, or left, as you choose in Settings.
-- **Captions** with a CC button on the player.
-- **Clip** a moment into a new video, or export it as a GIF or a short MP4.
-- **Download** the MP4 or, when allowed, the original upload.
-- **Support** links, **Compare side by side**, **Add captions**, **Mark a skippable part**, **Suggest a title or thumbnail**, and **Report** (videos, comments and channels), plus moderators' hide, restore and remove.
-
-Also from the website: search filters (sort, length, upload date, shape, game, server), the **Network** page (from Explore), **Follow from the fediverse** under Subscriptions, and the server's **Rules and contact**, **Transparency report** and **Following from the fediverse** pages under You. The Inbox has a shortcut to notification settings.
+Everything from 1.7.0 (the website's admin pages, settings, Studio, timeline editor and watch-page tools) is included.

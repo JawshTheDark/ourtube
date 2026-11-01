@@ -312,6 +312,12 @@ file is read straight from where it is, so even large recordings aren't copied f
 upload finishes, with the visibility you picked; the screen then follows processing until the video is ready. A
 video taller than it is wide shows up as a Short.
 
+**Share → OurTube** (1.7.1) uploads from other apps: share a video from Gallery, Files, Google Photos or Immich
+(its **Share**, not **Share link**, which sends only a link) and pick OurTube. Upload opens with the video chosen
+and the title taken from the file name, for the server you're using; if you aren't signed in, sign in first and
+the video is still there. One video goes up at a time, so sharing several keeps the first. A shared link or a file
+that isn't a video gets a message saying why it can't be uploaded.
+
 On 1.10 and newer the app sends the video in pieces of 8 MB (see
 [Big files and shaky connections](Uploading-and-Editing.md#big-files-and-shaky-connections)):
 

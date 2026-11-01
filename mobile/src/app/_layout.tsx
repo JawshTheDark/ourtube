@@ -10,6 +10,7 @@ import { PromptHost } from '@/components/Prompt';
 import { Welcome } from '@/components/Welcome';
 import { DensityProvider } from '@/lib/density';
 import { PrefsProvider } from '@/lib/prefs';
+import { useShareTarget } from '@/lib/share';
 import { SessionProvider, useSession } from '@/lib/session';
 import { colors, fonts } from '@/lib/theme';
 
@@ -30,6 +31,8 @@ const theme = {
 
 function Root() {
   const { ready, needsSetup } = useSession();
+  // A video shared from another app opens Upload once there's a server to send it to.
+  useShareTarget(ready && !needsSetup);
   useEffect(() => {
     if (ready) SplashScreen.hideAsync().catch(() => {});
   }, [ready]);
