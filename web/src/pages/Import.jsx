@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../api.js';
-import { useTitle } from '../auth.jsx';
+import { useAuth, useTitle } from '../auth.jsx';
 import { Icon } from '../components/Icons.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { VisibilityField } from '../components/VisibilityField.jsx';
@@ -108,8 +108,19 @@ function useFinder(onStarted) {
 }
 
 function YoutubeImport({ info, onStarted }) {
+  const { user } = useAuth();
   const [url, setUrl] = useState('');
   const f = useFinder(onStarted);
+  if (!info.enabled) {
+    return user?.is_admin ? (
+      <p className="hint">
+        Importing from YouTube is turned off on this server. Turn it on in <Link to="/admin">Admin → Overview</Link> with <b>Let people import their videos from
+        YouTube</b>.
+      </p>
+    ) : (
+      <p className="hint">Importing from YouTube is turned off on this server. The person who runs it can turn it on.</p>
+    );
+  }
   if (info.available === false) return <p className="error">yt-dlp is not installed on this server, so YouTube imports can't run. The Docker image includes it.</p>;
   return (
     <>
@@ -149,7 +160,6 @@ function ImmichImport({ info, onChanged }) {
   const [mode, setMode] = useState('link');
   const [link, setLink] = useState('');
   const [acct, setAcct] = useState({ url: '', api_key: '' });
-  const [page, setPage] = useState(1);
   const f = useFinder(onChanged);
   const connect = async (e) => {
     e.preventDefault();
@@ -222,10 +232,7 @@ function ImmichImport({ info, onChanged }) {
             <button
               className="btn btn-primary"
               disabled={f.busy}
-              onClick={() => {
-                setPage(1);
-                f.find('/imports/immich/list', { page: 1 });
-              }}
+              onClick={() => f.find('/imports/immich/list', { page: 1 })}
             >
               Show my videos
             </button>
@@ -239,11 +246,7 @@ function ImmichImport({ info, onChanged }) {
             <button
               className="btn btn-ghost top-gap"
               disabled={f.busy}
-              onClick={() => {
-                const next = page + 1;
-                setPage(next);
-                f.find('/imports/immich/list', { page: next }, true);
-              }}
+              onClick={() => f.find('/imports/immich/list', { page: f.found.next }, true)}
             >
               Show more
             </button>
@@ -262,15 +265,15 @@ function ImmichImport({ info, onChanged }) {
 export default function Import() {
   const toast = useToast();
   const [state, setState] = useState(null);
-  const [tab, setTab] = useState(null);
+  const [params, setParams] = useSearchParams();
   useTitle('Import videos');
   const load = () =>
     api('/imports')
-      .then((r) => {
-        setState(r);
-        setTab((t) => t || (r.youtube.enabled ? 'youtube' : 'immich'));
-      })
+      .then(setState)
       .catch((e) => toast(e.message));
+  // The tab is in the address (?from=), so it survives a reload; YouTube first where it's on.
+  const tab = ['youtube', 'immich'].includes(params.get('from')) ? params.get('from') : state?.youtube.enabled ? 'youtube' : 'immich';
+  const setTab = (t) => setParams({ from: t }, { replace: true });
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -295,11 +298,9 @@ export default function Import() {
         <Link to="/upload">upload files</Link>.
       </p>
       <div className="tabs settings-tabs">
-        {state.youtube.enabled && (
-          <button className={`tab ${tab === 'youtube' ? 'active' : ''}`} onClick={() => setTab('youtube')}>
-            From YouTube
-          </button>
-        )}
+        <button className={`tab ${tab === 'youtube' ? 'active' : ''}`} onClick={() => setTab('youtube')}>
+          From YouTube
+        </button>
         <button className={`tab ${tab === 'immich' ? 'active' : ''}`} onClick={() => setTab('immich')}>
           From Immich
         </button>

@@ -112,6 +112,14 @@ const assetTitle = (a) => {
   return (caption || path.basename(String(a.originalFileName || ''), path.extname(String(a.originalFileName || ''))) || 'Untitled video').slice(0, 120);
 };
 
+/**
+ * A video someone took. Immich keeps the moving part of Live Photos and motion photos as hidden videos
+ * (visibility "hidden", or isVisible false before Immich 1.133); those look like photos, so they're left out,
+ * with trashed and offline ones.
+ */
+const isOwnVideo = (a) =>
+  a && a.type === 'VIDEO' && typeof a.id === 'string' && /^[0-9a-f-]{36}$/i.test(a.id) && a.visibility !== 'hidden' && a.isVisible !== false && !a.isTrashed && !a.isOffline;
+
 async function immichAssets(auth, link, page) {
   const get = (p) => requestJson(`${auth.origin}${auth.query(p)}`, { headers: auth.headers, allowPrivate: auth.allowPrivate });
   if (link) {
@@ -119,15 +127,26 @@ async function immichAssets(auth, link, page) {
     if (share.allowDownload === false) throw new HttpError(400, 'This shared link doesn\'t allow downloads. In Immich, edit the link and turn on "Allow download".');
     let assets = Array.isArray(share.assets) ? share.assets : [];
     if (!assets.length && share.album?.id) assets = (await get(`/api/albums/${encodeURIComponent(share.album.id)}`)).assets || [];
-    return { title: share.album?.albumName || share.description || '', assets, next: null };
+    return { title: share.album?.albumName || share.description || '', assets: assets.filter(isOwnVideo), next: null };
   }
-  const r = await requestJson(`${auth.origin}/api/search/metadata`, {
-    method: 'POST',
-    headers: auth.headers,
-    allowPrivate: auth.allowPrivate,
-    body: { type: 'VIDEO', page: page || 1, size: 100, order: 'desc', withExif: true },
-  });
-  return { title: '', assets: r.assets?.items || [], next: r.assets?.nextPage ? Number(r.assets.nextPage) : null };
+  // A library of mostly motion photos can have pages with hardly a real video on them, so read on until there are
+  // enough to show (or ten pages), and say where to carry on.
+  const assets = [];
+  let p = page || 1;
+  let next = null;
+  for (let i = 0; i < 10; i++) {
+    const r = await requestJson(`${auth.origin}/api/search/metadata`, {
+      method: 'POST',
+      headers: auth.headers,
+      allowPrivate: auth.allowPrivate,
+      body: { type: 'VIDEO', page: p, size: 250, order: 'desc', withExif: true },
+    });
+    assets.push(...(r.assets?.items || []).filter(isOwnVideo));
+    next = r.assets?.nextPage ? Number(r.assets.nextPage) : null;
+    if (!next || assets.length >= 60) break;
+    p = next;
+  }
+  return { title: '', assets, next };
 }
 
 importsRouter.post('/immich/list', async (req, res) => {
@@ -136,7 +155,6 @@ importsRouter.post('/immich/list', async (req, res) => {
   const host = new URL(auth.origin).host;
   const { title, assets, next } = await immichAssets(auth, !!share, Number(req.body?.page) || 1);
   const videos = assets
-    .filter((a) => a && a.type === 'VIDEO' && typeof a.id === 'string' && /^[0-9a-f-]{36}$/i.test(a.id))
     .slice(0, MAX_PICK)
     .map((a) => ({
       ref: a.id,

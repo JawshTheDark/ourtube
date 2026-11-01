@@ -16,6 +16,9 @@ const API_KEY = 'immich-api-key-0123456789abcdef';
 const BEACH = '11111111-1111-4111-8111-111111111111';
 const PHOTO = '22222222-2222-4222-8222-222222222222';
 const PARTY = '33333333-3333-4333-8333-333333333333';
+// The moving part of a motion photo, as Immich keeps it (and as it did before 1.133).
+const MOTION = '44444444-4444-4444-8444-444444444444';
+const OLD_MOTION = '55555555-5555-4555-8555-555555555555';
 
 let inst, immich, immichUrl, alice, bob, carol, thumb;
 
@@ -31,11 +34,13 @@ const ASSETS = {
   [BEACH]: asset(BEACH, 'VIDEO', 'VID_0001.mp4', 'Beach day\nwith everyone', '2021-07-04T15:00:00.000Z'),
   [PHOTO]: asset(PHOTO, 'IMAGE', 'IMG_0002.jpg', '', '2021-07-04T15:01:00.000Z'),
   [PARTY]: asset(PARTY, 'VIDEO', 'Birthday party.mov', '', '2022-02-02T10:00:00.000Z'),
+  [MOTION]: { ...asset(MOTION, 'VIDEO', 'PXL_0003.MP.mp4', '', '2023-01-01T09:00:00.000Z'), visibility: 'hidden' },
+  [OLD_MOTION]: { ...asset(OLD_MOTION, 'VIDEO', 'MVIMG_0004.mp4', '', '2023-01-01T09:00:00.000Z'), isVisible: false },
 };
 
 /** A tiny Immich: shared links answer with ?key=, the account with the x-api-key header. */
 function fakeImmich() {
-  return http.createServer((req, res) => {
+  return http.createServer(async (req, res) => {
     const u = new URL(req.url, 'http://x');
     const key = u.searchParams.get('key');
     const viaShare = key === SHARE_KEY || key === 'nodownloads';
@@ -48,9 +53,13 @@ function fakeImmich() {
     if (u.pathname === '/api/shared-links/me' && viaShare) {
       return json(200, { allowDownload: key === SHARE_KEY, album: { id: 'album-1', albumName: 'Summer 2021' }, assets: [] });
     }
-    if (u.pathname === '/api/albums/album-1' && viaShare) return json(200, { assets: [ASSETS[BEACH], ASSETS[PHOTO]] });
+    if (u.pathname === '/api/albums/album-1' && viaShare) return json(200, { assets: [ASSETS[BEACH], ASSETS[PHOTO], ASSETS[MOTION]] });
     if (u.pathname === '/api/search/metadata' && req.method === 'POST' && viaKey) {
-      return json(200, { assets: { items: [ASSETS[PARTY], ASSETS[BEACH]], nextPage: null } });
+      // A first page of nothing but motion photos' clips, then the real videos.
+      let body = '';
+      for await (const c of req) body += c;
+      const page = JSON.parse(body || '{}').page || 1;
+      return json(200, page === 1 ? { assets: { items: [ASSETS[MOTION], ASSETS[OLD_MOTION]], nextPage: '2' } } : { assets: { items: [ASSETS[PARTY], ASSETS[BEACH]], nextPage: null } });
     }
     if (u.pathname === '/api/users/me' && viaKey) return json(200, { name: 'Alice in Immich', email: 'alice@example.com' });
     const m = /^\/api\/assets\/([0-9a-f-]{36})(\/original|\/thumbnail)?$/.exec(u.pathname);
@@ -147,7 +156,7 @@ test('when YouTube wants the server to sign in, the error says what to do', asyn
   assert.match(r.data.error, /youtube-cookies\.txt/);
 });
 
-test('an Immich shared link: only videos, only with downloads allowed, and only for admins on a private address', async () => {
+test('an Immich shared link: only videos (not photos or motion photos), only with downloads allowed, and only for admins on a private address', async () => {
   const link = `${immichUrl}/share/${SHARE_KEY}`;
   const refused = await bob.post('/api/imports/immich/list', { link });
   assert.equal(refused.status, 400);
@@ -178,7 +187,7 @@ test('an Immich shared link: only videos, only with downloads allowed, and only 
   assert.equal((await new Client(inst.url).get(`/api/videos/${v.id}`)).status, 404);
 });
 
-test('a connected Immich account: the key is checked and never shown, its videos listed with thumbnails through here', async () => {
+test('a connected Immich account: the key is checked and never shown, its videos (past pages of motion photos) listed with thumbnails through here', async () => {
   const bad = await alice.req('PUT', '/api/imports/immich/account', { url: immichUrl, api_key: 'wrong-key-0123456789abcdef' });
   assert.equal(bad.status, 400);
   const ok = await alice.req('PUT', '/api/imports/immich/account', { url: `${immichUrl}/api/`, api_key: API_KEY });

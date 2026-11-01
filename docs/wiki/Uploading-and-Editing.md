@@ -84,7 +84,7 @@ An imported video becomes yours like an upload does: processed, with its thumbna
 afterwards. Imports don't notify your subscribers or fire your webhooks, since a whole back catalogue would flood
 them. Videos you've already imported are marked in the list and skipped if you pick them again.
 
-**From YouTube** (only when the admin has turned it on): paste your channel's address, like
+**From YouTube** (only when the admin has turned it on; otherwise its tab says so): paste your channel's address, like
 `https://www.youtube.com/@you`, a playlist, or a single video. A channel lists its videos, Shorts and past streams.
 Each video arrives with its title, description, tags, thumbnail and chapters, up to the server's maximum
 resolution. You tick that the videos are yours or that you may post them here. YouTube changes often and sometimes
@@ -94,12 +94,13 @@ refuses servers; when it does, the error says so, and an admin can fix it (see
 **From Immich**, two ways:
 
 - **A shared link**, no account needed: in Immich, select the videos or open an album, then **Share → Create
-  link**, turn on **Allow download**, and paste the link. Only the videos in it are listed; photos are skipped.
+  link**, turn on **Allow download**, and paste the link. Only the videos in it are listed.
 - **Your whole library**: enter your Immich's address and an API key (made in Immich under **Account settings →
   API keys → New API key**), then click **Connect Immich**. The key is checked, kept on this server and never shown
   again; **Disconnect** forgets it. You then browse all your Immich videos, newest first.
 
-A video's title is its description in Immich, or else its file name. An Immich on your home network (a `192.168.`
+Photos are skipped, and so are the few seconds of movement that Live Photos and motion photos keep as hidden
+videos in Immich. A video's title is its description in Immich, or else its file name. An Immich on your home network (a `192.168.`
 or `localhost` address) can only be reached by admins, so that people can't use the server to look around its
 network; everyone else uses Immich's public address. On Android, Immich's own **Share** button can also send a
 video straight to the [OurTube app](Android-App.md).
