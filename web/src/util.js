@@ -237,4 +237,5 @@ export const VISIBILITY_HELP = {
   public: 'Anyone can find and watch this video.',
   unlisted: 'Only people with the link can watch. It will not show up in listings or search.',
   private: 'Only you (and admins) can watch this video.',
+  group: 'Only the people in the group can watch it.',
 };

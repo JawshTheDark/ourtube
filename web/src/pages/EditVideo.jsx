@@ -5,10 +5,11 @@ import { useAuth, useTitle } from '../auth.jsx';
 import { Icon } from '../components/Icons.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { GameField } from '../components/GameField.jsx';
+import { VisibilityField } from '../components/VisibilityField.jsx';
 import { CaptionsManager, SegmentsManager, SuggestionsManager } from '../components/VideoManage.jsx';
 import { Empty } from '../components/VideoCard.jsx';
 import { StatusBadge } from './Studio.jsx';
-import { copyText, formatBytes, formatDuration, VISIBILITY_HELP } from '../util.js';
+import { copyText, formatBytes, formatDuration } from '../util.js';
 
 export default function EditVideo() {
   const { id } = useParams();
@@ -27,6 +28,7 @@ export default function EditVideo() {
     description: v.description,
     tags: v.tags.join(', '),
     visibility: v.draft ? v.draft_visibility || 'public' : v.visibility,
+    group_id: v.group?.id || null,
     federate: v.federate,
     comment_mode: v.comment_mode || 'inherit',
     game: v.game?.name || '',
@@ -65,6 +67,7 @@ export default function EditVideo() {
     form.title !== video.title ||
     form.description !== video.description ||
     form.visibility !== (video.draft ? video.draft_visibility || 'public' : video.visibility) ||
+    (form.group_id || null) !== (video.group?.id || null) ||
     form.tags !== video.tags.join(', ') ||
     form.federate !== video.federate ||
     form.comment_mode !== (video.comment_mode || 'inherit') ||
@@ -157,15 +160,7 @@ export default function EditVideo() {
             <span className="hint">Separate with commas.</span>
           </div>
           <GameField value={form.game} onChange={(game) => set({ game })} />
-          <div className="field">
-            <label>Visibility</label>
-            <select className="select" value={form.visibility} onChange={(e) => set({ visibility: e.target.value })}>
-              <option value="public">Public</option>
-              <option value="unlisted">Unlisted</option>
-              <option value="private">Private</option>
-            </select>
-            <span className="hint">{VISIBILITY_HELP[form.visibility]}</span>
-          </div>
+          <VisibilityField visibility={form.visibility} groupId={form.group_id} onChange={set} />
           <div className="field">
             <label>Comments</label>
             <select className="select" value={form.comment_mode} onChange={(e) => set({ comment_mode: e.target.value })}>

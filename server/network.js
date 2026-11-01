@@ -1787,7 +1787,7 @@ setInterval(() => {
 const KIND = { like: 'likes', comment: 'comments', comment_delete: 'comments', subscribe: 'subscriptions', unsubscribe: 'subscriptions' };
 
 function inboxVideo(id) {
-  const v = db.prepare("SELECT * FROM videos WHERE id = ? AND status = 'ready' AND visibility != 'private'").get(String(id || ''));
+  const v = db.prepare("SELECT * FROM videos WHERE id = ? AND status = 'ready' AND visibility IN ('public', 'unlisted')").get(String(id || ''));
   if (!v) throw new HttpError(404, 'Video not found');
   return v;
 }

@@ -2,6 +2,8 @@
 
 - [Uploading](#uploading)
 - [Uploading from ShareX and other tools](#uploading-from-sharex-and-other-tools)
+- [Importing from YouTube and Immich](#importing-from-youtube-and-immich)
+- [Groups: videos for family and friends](#groups-videos-for-family-and-friends)
 - [Drafts: nothing goes out until you save](#drafts-nothing-goes-out-until-you-save)
 - [How uploads are processed](#how-uploads-are-processed)
 - [Video details](#video-details)
@@ -18,7 +20,8 @@ progress bar, and you can fill in its details while it uploads:
 - **Title**, **description** and **tags** (times in the description, one per line, become
   [chapters](Watching-and-Discovery.md#chapters))
 - **Visibility**: *public* (listed on the site and, if you allow it, in the network), *unlisted* (anyone with
-  the link) or *private* (only you)
+  the link), *private* (only you) or *only for a group* (the people in one of your
+  [groups](#groups-videos-for-family-and-friends))
 - **Game**, from the site's catalog (see [Video Tools and Games](Video-Tools-and-Games.md#games))
 - **Let others clip this video**
 
@@ -69,6 +72,53 @@ curl -H "Authorization: Bearer ot_..." -F "file=@match.mp4" -F "title=Clutch rou
 The answer is the video as JSON, with `url`, its watch page; it plays once it's processed. A tool that sends the
 whole file in one request is limited by your reverse proxy (Cloudflare's 100 MB, for one); bigger files can go up in
 pieces through `/api/uploads` with the same key, the way the upload page does.
+
+## Importing from YouTube and Immich
+
+**Upload → Import from YouTube or Immich** (`/import`) brings in videos you already have somewhere else. You pick
+them from a list, choose who sees them, and they're fetched in the background, one at a time. **Your imports**, under
+the list, shows how each one is doing; one that failed can be tried again. **Keep their original dates** (on by
+default) puts each video on your channel at the date it was first posted or filmed, not today.
+
+An imported video becomes yours like an upload does: processed, with its thumbnail and details, and editable
+afterwards. Imports don't notify your subscribers or fire your webhooks, since a whole back catalogue would flood
+them. Videos you've already imported are marked in the list and skipped if you pick them again.
+
+**From YouTube** (only when the admin has turned it on): paste your channel's address, like
+`https://www.youtube.com/@you`, a playlist, or a single video. A channel lists its videos, Shorts and past streams.
+Each video arrives with its title, description, tags, thumbnail and chapters, up to the server's maximum
+resolution. You tick that the videos are yours or that you may post them here. YouTube changes often and sometimes
+refuses servers; when it does, the error says so, and an admin can fix it (see
+[Configuration](Configuration.md#importing-from-youtube)).
+
+**From Immich**, two ways:
+
+- **A shared link**, no account needed: in Immich, select the videos or open an album, then **Share → Create
+  link**, turn on **Allow download**, and paste the link. Only the videos in it are listed; photos are skipped.
+- **Your whole library**: enter your Immich's address and an API key (made in Immich under **Account settings →
+  API keys → New API key**), then click **Connect Immich**. The key is checked, kept on this server and never shown
+  again; **Disconnect** forgets it. You then browse all your Immich videos, newest first.
+
+A video's title is its description in Immich, or else its file name. An Immich on your home network (a `192.168.`
+or `localhost` address) can only be reached by admins, so that people can't use the server to look around its
+network; everyone else uses Immich's public address. On Android, Immich's own **Share** button can also send a
+video straight to the [OurTube app](Android-App.md).
+
+## Groups: videos for family and friends
+
+A **group** (sidebar → **Groups**, `/groups`) is a circle of people on this server who see videos meant only for
+them: the family, a team, a few friends. Make one, then add people by username, or click **Make a join link** and
+send it: anyone signed in who opens it can join. **New link** stops the old one; **Turn off** stops joining by link.
+
+Choose **Only for a group → its name** as a video's visibility when you upload or edit it. Then:
+
+- the group's members (and admins) can watch it; to anyone else, signed in or not, it doesn't exist;
+- it isn't on Home, in search or feeds, in link previews or embeds, and never goes to the network or the fediverse;
+- members are notified (**Settings → Notifications → Your groups**), and it's listed on the group's page.
+
+You can only share with groups you're in. If you leave a group or are removed, your videos for it become private.
+The owner can rename the group and remove people, and deletes it instead of leaving; deleting a group makes all of
+its videos private.
 
 ## Drafts: nothing goes out until you save
 

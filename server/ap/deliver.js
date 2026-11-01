@@ -25,6 +25,16 @@ export const actorUri = (localActor, base = apBase()) => signerFor(localActor, b
 
 const SCHEDULE = [60e3, 5 * 60e3, 30 * 60e3, 2 * 3600e3, 6 * 3600e3, 12 * 3600e3, 24 * 3600e3, 48 * 3600e3];
 
+/**
+ * Whether their server turned a delivery down for good. A 4xx usually means so (bad request, gone, blocked), but
+ * PeerTube's "signature could not be checked" and Mastodon's "Unable to fetch key" mean they couldn't load our key
+ * just then (we were restarting, say), so those are tried again like any other hiccup.
+ */
+export function refusedForGood(status, message = '') {
+  if (!(status >= 400 && status < 500) || [408, 425, 429].includes(status)) return false;
+  return !/signature could not be checked|unable to fetch key/i.test(message);
+}
+
 defineJob('ap.deliver', {
   lane: 'network',
   maxAttempts: SCHEDULE.length + 1,
@@ -35,7 +45,7 @@ defineJob('ap.deliver', {
       await apFetch(inbox, { method: 'POST', body, signer: key || signerFor(signer) });
     } catch (e) {
       // Their server refused it for good (bad request, gone, forbidden): don't keep trying.
-      if (e.status >= 400 && e.status < 500 && ![408, 425, 429].includes(e.status)) {
+      if (refusedForGood(e.status, e.message)) {
         markRefused(body, inbox, e.status);
         throw new PermanentError(`${inbox}: ${e.message}`);
       }

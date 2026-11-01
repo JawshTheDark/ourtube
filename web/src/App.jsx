@@ -33,6 +33,8 @@ import Editor from './pages/Editor.jsx';
 import Network from './pages/Network.jsx';
 import RemoteWatch from './pages/RemoteWatch.jsx';
 import Shorts from './pages/Shorts.jsx';
+import Import from './pages/Import.jsx';
+import { GroupPage, Groups, JoinGroup } from './pages/Groups.jsx';
 import Playlist, { MyPlaylists, WatchLater } from './pages/Playlist.jsx';
 import Party from './pages/Party.jsx';
 import Live from './pages/Live.jsx';
@@ -266,6 +268,38 @@ export default function App() {
                 element={
                   <RequireAuth>
                     <MyPlaylists />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/import"
+                element={
+                  <RequireAuth>
+                    <Import />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/groups"
+                element={
+                  <RequireAuth>
+                    <Groups />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/groups/join/:token"
+                element={
+                  <RequireAuth>
+                    <JoinGroup />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/groups/:id"
+                element={
+                  <RequireAuth>
+                    <GroupPage />
                   </RequireAuth>
                 }
               />

@@ -8,6 +8,19 @@ process.env.DATA_DIR = tempDir('unit');
 const { parseTags, escapeHtml } = await import('../server/util.js');
 const { normalizeInstanceUrl, isPrivateIp, cleanItem } = await import('../server/network.js');
 const { normalizeEdit } = await import('../server/routes/videos.js');
+const { refusedForGood } = await import('../server/ap/deliver.js');
+
+test('refusedForGood: a refusal stops deliveries, a key that could not be fetched just then does not', () => {
+  assert.equal(refusedForGood(410, 'HTTP 410: Gone'), true);
+  assert.equal(refusedForGood(403, 'HTTP 403: {"error":"blocked"}'), true);
+  assert.equal(refusedForGood(429, 'HTTP 429'), false);
+  assert.equal(refusedForGood(502, 'HTTP 502'), false);
+  assert.equal(refusedForGood(undefined, 'fetch failed'), false);
+  // tilvids.com, while one of our servers was restarting:
+  const peertube = 'HTTP 403: {"type":"about:blank","title":"Forbidden","detail":"ActivityPub signature could not be checked","status":403}';
+  assert.equal(refusedForGood(403, peertube), false);
+  assert.equal(refusedForGood(401, 'HTTP 401: {"error":"Unable to fetch key JSON at https://clips.example.com/ap/actor#main-key"}'), false);
+});
 
 test('parseTags cleans, lowercases, dedupes and caps tags', () => {
   assert.deepEqual(parseTags('Valorant, #ACE, valorant,  clutch  '), ['valorant', 'ace', 'clutch']);

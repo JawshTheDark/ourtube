@@ -14,6 +14,7 @@ import { requireAuth } from './auth.js';
 import { HttpError, newId, now, str } from './util.js';
 import { LOCAL_LIST_COLS, REMOTE_LIST_COLS, mapListRow } from './routes/videos.js';
 import { NETWORK_VISIBLE } from './network.js';
+import { isMember } from './groups.js';
 
 export const MAX_PLAYLISTS = 200;
 export const MAX_ITEMS = 500;
@@ -34,10 +35,12 @@ export const refOf = (it) => (it.video_id ? `v:${it.video_id}` : `n:${it.instanc
 export function resolveRef(ref, viewer = null) {
   if (ref.video_id) {
     const r = db
-      .prepare(`SELECT ${LOCAL_LIST_COLS}, v.visibility AS vis, v.status AS st, v.moderation_status AS modstat FROM videos v JOIN users u ON u.id = v.user_id WHERE v.id = ?`)
+      .prepare(`SELECT ${LOCAL_LIST_COLS}, v.visibility AS vis, v.group_id AS grp, v.status AS st, v.moderation_status AS modstat FROM videos v JOIN users u ON u.id = v.user_id WHERE v.id = ?`)
       .get(ref.video_id);
-    // Unlisted videos may be in a playlist (their owner shared the link); private ones only for their owner.
-    const ok = r && r.st === 'ready' && !r.modstat && (r.vis !== 'private' || (viewer && viewer.id === r.user_id));
+    // Unlisted videos may be in a playlist (their owner shared the link); private ones only for their owner, and
+    // a group's only for its members.
+    const ok =
+      r && r.st === 'ready' && !r.modstat && (r.vis === 'public' || r.vis === 'unlisted' || (viewer && (viewer.id === r.user_id || (r.vis === 'group' && isMember(r.grp, viewer.id)))));
     return ok ? mapListRow(r) : null;
   }
   const r = db

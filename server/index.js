@@ -30,6 +30,8 @@ import { captureLogs, diagnosticsRouter } from './diagnostics.js';
 import { startUpdateChecks } from './updates.js';
 import { feedsRouter } from './feeds.js';
 import { embedRouter } from './embed.js';
+import { groupsRouter } from './groups.js';
+import { importsRouter } from './imports.js';
 import { searchRouter, startSearchSync } from './search.js';
 import { recommendRouter } from './recommend.js';
 import { analyticsRouter } from './stats.js';
@@ -117,6 +119,8 @@ app.use('/api/me/webhooks', webhooksRouter); // each person's webhooks
 app.use('/api/me/api-keys', apiKeysRouter); // each person's upload keys (ShareX and the like)
 app.use('/api/me', privacyRouter); // exports, account deletion
 app.use('/api/me', meRouter);
+app.use('/api/groups', groupsRouter); // families and circles of friends, and videos only for them
+app.use('/api/imports', importsRouter); // videos from YouTube and Immich
 app.use('/api/me', moveRouter); // aliases and moves
 app.use('/api/me', linksRouter); // linked accounts
 app.use('/api/me', transferRouter); // channel export and import
@@ -188,7 +192,7 @@ if (fs.existsSync(indexFile)) {
     const m = /^\/(?:watch|shorts)\/([A-Za-z0-9_-]+)/.exec(req.path); // Shorts links get the same previews
     if (m) {
       const v = db.prepare('SELECT v.*, u.display_name FROM videos v JOIN users u ON u.id = v.user_id WHERE v.id = ?').get(m[1]);
-      if (v && v.visibility !== 'private' && v.status === 'ready') {
+      if (v && (v.visibility === 'public' || v.visibility === 'unlisted') && v.status === 'ready') {
         title = `${v.title} - ${settings.site_name}`;
         const alt = apEnabled() && v.visibility === 'public' && v.federate && !v.moderation_status
           ? `<link rel="alternate" type="application/activity+json" href="${escapeHtml(`${apBase(req)}/ap/videos/${v.id}`)}">\n    `
@@ -266,7 +270,9 @@ app.use((err, req, res, next) => {
   const status = err instanceof HttpError ? err.status : err.status || err.statusCode || 500;
   if (status >= 500) console.error(err);
   if (res.headersSent) return res.end();
-  res.status(status).json({ error: status >= 500 ? 'Something went wrong on the server' : err.message });
+  // An HttpError's message was written for people (a remote server not answering, YouTube wanting a sign-in);
+  // anything else that breaks stays vague.
+  res.status(status).json({ error: status >= 500 && !(err instanceof HttpError) ? 'Something went wrong on the server' : err.message });
 });
 
 // ---- startup ----------------------------------------------------------------

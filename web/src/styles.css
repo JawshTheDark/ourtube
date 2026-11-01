@@ -2234,6 +2234,153 @@ kbd {
   gap: 8px;
   margin-top: 8px;
 }
+/* Groups (pages/Groups.jsx): families and circles of friends. */
+.group-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 2px 0 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-size: 13px;
+  font-weight: 700;
+}
+.group-badge .icon {
+  width: 16px;
+  height: 16px;
+}
+.group-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+}
+.group-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: var(--text);
+}
+.group-row:hover {
+  background: var(--surface-2);
+}
+.group-icon {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  color: var(--accent-text);
+  background: var(--accent-soft);
+}
+.group-icon.big {
+  width: 72px;
+  height: 72px;
+  border-radius: 18px;
+}
+.group-main {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.group-go {
+  margin-left: auto;
+  color: var(--text-2);
+  font-size: 24px;
+}
+.group-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+}
+.group-head h1 {
+  margin: 0;
+}
+.group-member {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  color: var(--text);
+}
+.group-member .badge {
+  margin-left: 6px;
+}
+.join-card {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  margin-top: 40px;
+  padding: 32px;
+  text-align: center;
+}
+.join-card h1 {
+  margin: 0;
+}
+
+/* Import (pages/Import.jsx): picking videos from YouTube or Immich. */
+.import-list {
+  display: grid;
+  gap: 6px;
+  max-height: 480px;
+  margin: 8px 0 16px;
+  overflow-y: auto;
+}
+.import-pick {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  background: var(--bg);
+  cursor: pointer;
+}
+.import-pick.done {
+  opacity: 0.55;
+  cursor: default;
+}
+.import-thumb {
+  width: 96px;
+  aspect-ratio: 16 / 9;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 8px;
+  color: var(--text-2);
+  background: var(--surface-2);
+}
+.import-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.import-text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  font-size: 14px;
+}
+.import-text b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.import-text .muted {
+  font-size: 12px;
+}
+.import-options {
+  margin: 8px 0 12px;
+}
+.chips.flush {
+  position: static;
+  padding: 0 0 12px;
+  background: none;
+}
+
 /* Admin, Network: browsing joinpeertube.org's directory of PeerTube servers. */
 .pt-filters,
 .pt-topics {

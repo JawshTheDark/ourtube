@@ -205,7 +205,7 @@ clipsRouter.post('/videos/:id/clip', requireAuth, (req, res) => {
   const id = newId();
   const t = now();
   const title = str(b.title, 120).trim() || `${v.title} (clip)`.slice(0, 120);
-  const visibility = VISIBILITIES.includes(b.visibility) ? b.visibility : v.visibility === 'private' ? 'private' : 'public';
+  const visibility = VISIBILITIES.includes(b.visibility) ? b.visibility : v.visibility === 'private' || v.visibility === 'group' ? 'private' : 'public';
   db.prepare(
     `INSERT INTO videos (id, user_id, title, description, visibility, status, original_name, size_bytes, created_at, updated_at, source_video_id, source_start, source_end, game_id)
      VALUES (?, ?, ?, ?, ?, 'queued', ?, 0, ?, ?, ?, ?, ?, ?)`,

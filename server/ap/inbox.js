@@ -387,7 +387,7 @@ async function onNote(note, actorId, base) {
   if (video) {
     const verdictTo = wantsVerdict(actor.id) ? actor : null;
     const refuse = (reason) => verdictTo && sendVerdict(`u:${video.user_id}`, note.id, verdictTo, false, reason);
-    if (!accepts(actor.id).comments || video.visibility === 'private') return refuse('Comments from other instances are turned off here');
+    if (!accepts(actor.id).comments || !['public', 'unlisted'].includes(video.visibility)) return refuse('Comments from other instances are turned off here');
     if (db.prepare('SELECT 1 FROM comments WHERE ap_id = ?').get(note.id)) return;
     const inst = instanceFor(actor.id);
     const verdict = intakeComment({ video, author, body, parentId, remote: true, instance: inst });

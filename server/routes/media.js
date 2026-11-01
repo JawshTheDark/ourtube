@@ -18,7 +18,7 @@ function editorOnly(req, v) {
 }
 
 mediaRouter.get('/videos/:file', (req, res) => {
-  const v = db.prepare('SELECT id, user_id, title, visibility, status, file_path, moderation_status FROM videos WHERE id = ?').get(idFrom(req.params.file));
+  const v = db.prepare('SELECT id, user_id, title, visibility, group_id, status, file_path, moderation_status FROM videos WHERE id = ?').get(idFrom(req.params.file));
   if (!v || v.status !== 'ready' || !v.file_path) throw new HttpError(404, 'Not found');
   if (!canPlay(v, req.user)) throw new HttpError(404, 'Not found');
   // URLs carry ?v=<edit version>, so a long cache is safe; unversioned URLs get a short one.

@@ -14,7 +14,7 @@ import { HttpError, newId, now, str, clampInt } from './util.js';
 import { defineJob, enqueueJob } from './jobs.js';
 import { createReport, logAction, REPORT_REASONS } from './reports.js';
 import { onLocalVideosChanged, sendNetworkReport } from './network.js';
-import { removeVideoFiles } from './routes/videos.js';
+import { canView, removeVideoFiles } from './routes/videos.js';
 import { notifyModeration } from './notify.js';
 import { actorUri, apVideoChanged, sendTo } from './ap/deliver.js';
 
@@ -105,7 +105,7 @@ reportsRouter.post('/', async (req, res) => {
 
   if (targetType === 'video') {
     const v = videoById(targetId);
-    if (!v || (v.visibility === 'private' && v.user_id !== req.user.id)) throw new HttpError(404, 'Video not found');
+    if (!v || !canView(v, req.user)) throw new HttpError(404, 'Video not found');
     id = createReport({ ...base, targetType, targetId: v.id, targetTitle: v.title, targetUrl: `/watch/${v.id}`, targetOwner: v.username });
   } else if (targetType === 'comment') {
     const c = db.prepare('SELECT c.*, u.username FROM comments c JOIN users u ON u.id = c.user_id WHERE c.id = ?').get(targetId);

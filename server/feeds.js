@@ -123,7 +123,7 @@ feedsRouter.get('/playlist/:file', (req, res) => {
   if (!p) throw new HttpError(404, 'Playlist not found');
   const base = baseUrl(req);
   const videos = db
-    .prepare(`${SELECT.replace("v.visibility = 'public'", "v.visibility != 'private'")} AND v.id IN (SELECT video_id FROM playlist_items WHERE playlist_id = ?)
+    .prepare(`${SELECT.replace("v.visibility = 'public'", "v.visibility IN ('public', 'unlisted')")} AND v.id IN (SELECT video_id FROM playlist_items WHERE playlist_id = ?)
       ORDER BY (SELECT added_at FROM playlist_items i WHERE i.playlist_id = ? AND i.video_id = v.id) DESC LIMIT ${LIMIT}`)
     .all(p.id, p.id);
   send(req, res, m[2], { base, self: `${base}/feeds/playlist/${p.id}.${m[2]}`, title: `${p.title} by ${p.display_name}`, subtitle: p.description, link: `${base}/playlist/${p.id}`, videos });

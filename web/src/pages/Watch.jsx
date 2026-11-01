@@ -221,7 +221,7 @@ function ShareDialog({ video, videoRef, loop, onClose }) {
           </div>
         )}
         {withEnd && end <= start && <p className="error">The end has to come after the start.</p>}
-        {video.visibility !== 'private' && (
+        {(video.visibility === 'public' || video.visibility === 'unlisted') && (
           <>
             <button className="btn btn-ghost share-embed-toggle" onClick={() => setEmbed((e) => !e)} aria-expanded={embed}>
               <Icon name="code" /> Embed on a website
@@ -242,7 +242,9 @@ function ShareDialog({ video, videoRef, loop, onClose }) {
         <p className="hint">
           {video.visibility === 'private'
             ? 'This video is private: only you and admins can open the link.'
-            : video.visibility === 'unlisted'
+            : video.visibility === 'group'
+              ? `This video is only for ${video.group?.name || 'a group'}: only its members can open the link.`
+              : video.visibility === 'unlisted'
               ? 'This video is unlisted: anyone with the link can watch it, but it is hidden from the site.'
               : 'Paste the link in Discord or Slack and it shows the thumbnail with an inline player.'}
         </p>
@@ -463,6 +465,11 @@ export default function Watch() {
             </h1>
           );
         })()}
+        {video.group && (
+          <Link to={`/groups/${video.group.id}`} className="group-badge">
+            <Icon name="group" /> Only for {video.group.name}
+          </Link>
+        )}
         {(video.game || video.source || loopRange) && (
           <div className="watch-subline">
             {video.game && (
@@ -535,7 +542,7 @@ export default function Watch() {
                 <Icon name="playlist_add" /> Save
               </button>
             )}
-            {video.status === 'ready' && video.video_url && video.visibility !== 'private' && (
+            {video.status === 'ready' && video.video_url && (video.visibility === 'public' || video.visibility === 'unlisted') && (
               <button className="btn" onClick={() => startParty({ ref: `v:${video.id}` })} title="Watch this with friends, in sync, with chat">
                 <Icon name="group" /> Watch together
               </button>

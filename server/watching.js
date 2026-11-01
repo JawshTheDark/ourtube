@@ -309,7 +309,7 @@ watchingMediaRouter.get('/hls/:dir/:file', (req, res) => {
   const file = String(req.params.file);
   const m = /^([A-Za-z0-9_-]+)-v(\d+)$/.exec(dir);
   if (!m || !/^[a-z0-9-]+\.(m3u8|m4s|mp4)$/.test(file)) throw new HttpError(404, 'Not found');
-  const v = db.prepare('SELECT id, user_id, visibility, status, moderation_status FROM videos WHERE id = ?').get(m[1]);
+  const v = db.prepare('SELECT id, user_id, visibility, group_id, status, moderation_status FROM videos WHERE id = ?').get(m[1]);
   if (!v || !canPlay(v, req.user)) throw new HttpError(404, 'Not found');
   const full = path.join(DIRS.hls, dir, file);
   if (!fs.existsSync(full)) throw new HttpError(404, 'Not found');
@@ -321,7 +321,7 @@ watchingMediaRouter.get('/renditions/:file', (req, res) => {
   const file = String(req.params.file);
   const m = /^([A-Za-z0-9_-]+)-v\d+-720\.mp4$/.exec(file);
   if (!m) throw new HttpError(404, 'Not found');
-  const v = db.prepare('SELECT id, user_id, visibility, status, moderation_status FROM videos WHERE id = ?').get(m[1]);
+  const v = db.prepare('SELECT id, user_id, visibility, group_id, status, moderation_status FROM videos WHERE id = ?').get(m[1]);
   if (!v || !canPlay(v, req.user)) throw new HttpError(404, 'Not found');
   const full = path.join(DIRS.renditions, file);
   if (!fs.existsSync(full)) throw new HttpError(404, 'Not found');

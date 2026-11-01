@@ -80,7 +80,7 @@ function buildExport(userId) {
       id: v.id,
       title: v.title,
       description: v.description,
-      visibility: v.visibility,
+      visibility: v.visibility === 'group' ? 'private' : v.visibility, // groups don't exist on the other side
       tags: db.prepare('SELECT tag FROM tags WHERE video_id = ?').all(v.id).map((t) => t.tag),
       game: game ? { slug: game.id, name: game.name } : null,
       created_at: iso(v.created_at),
@@ -404,7 +404,7 @@ async function runImport(id) {
          game_id, allow_clips, allow_original_download, comment_mode, federate, views, thumb_path, custom_thumb, import_key, notified_at)
        VALUES (?, ?, ?, ?, ?, 'queued', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).run(
-      vid, user.id, str(v.title, 120).trim() || 'Untitled clip', str(v.description, 5000), VISIBILITIES.has(v.visibility) ? v.visibility : 'public',
+      vid, user.id, str(v.title, 120).trim() || 'Untitled clip', str(v.description, 5000), VISIBILITIES.has(v.visibility) ? v.visibility : 'private',
       'video.mp4', original, e.size, created, t, v.published_at ? fromIso(v.published_at, created) : null,
       game?.id || null, v.allow_clips ? 1 : 0, v.allow_original_download ? 1 : 0, COMMENT_MODES.has(v.comment_mode) ? v.comment_mode : 'inherit',
       v.federate === false ? 0 : 1, Math.max(0, Math.floor(Number(v.views) || 0)), thumb, thumb && v.custom_thumbnail ? 1 : 0, key, t,

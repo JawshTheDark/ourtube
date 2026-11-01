@@ -489,6 +489,14 @@ export default function Admin() {
                 <input type="checkbox" checked={form.show_dislikes === 'true'} onChange={(e) => set({ show_dislikes: e.target.checked ? 'true' : 'false' })} />
                 Show dislike counts (uploaders always see their own)
               </label>
+              <label className="checkbox field">
+                <input type="checkbox" checked={form.imports_youtube === 'true'} onChange={(e) => set({ imports_youtube: e.target.checked ? 'true' : 'false' })} />
+                Let people import their videos from YouTube
+              </label>
+              <span className="hint">
+                Uses yt-dlp (it comes with the Docker image and updates itself daily). YouTube changes often and sometimes blocks servers; if it asks this server to
+                sign in, put a cookies.txt from a YouTube login in data/youtube-cookies.txt. Imports count against storage like uploads.
+              </span>
               <button className="btn btn-primary" disabled={busy}>
                 Save settings
               </button>

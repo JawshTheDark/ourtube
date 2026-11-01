@@ -20,7 +20,7 @@ const ENCODERS = ['libx264', 'h264_nvenc', 'h264_qsv', 'h264_amf'];
 // Only the general site settings; keys, tokens and network settings never go to the browser from here.
 const SITE_SETTINGS = [
   'site_name', 'registration_mode', 'max_upload_mb', 'default_quota_mb', 'storage_limit_gb', 'max_height', 'encoder', 'delete_originals', 'public_url',
-  'hls_ladder', 'federation_rendition', 'show_dislikes', 'smtp_host', 'smtp_port', 'smtp_secure', 'smtp_user', 'smtp_from', 'steamgriddb_auto',
+  'hls_ladder', 'federation_rendition', 'show_dislikes', 'smtp_host', 'smtp_port', 'smtp_secure', 'smtp_user', 'smtp_from', 'steamgriddb_auto', 'imports_youtube',
 ];
 function siteSettings() {
   const s = getSettings();
@@ -67,6 +67,7 @@ adminRouter.patch('/settings', (req, res) => {
   if (typeof b.steamgriddb_api_key === 'string' && b.steamgriddb_api_key.trim()) setSetting('steamgriddb_api_key', b.steamgriddb_api_key.trim().slice(0, 200));
   if (b.steamgriddb_api_key === null) setSetting('steamgriddb_api_key', '');
   if (b.steamgriddb_auto !== undefined) setSetting('steamgriddb_auto', bool(b.steamgriddb_auto));
+  if (b.imports_youtube !== undefined) setSetting('imports_youtube', bool(b.imports_youtube));
   // Changing the streaming ladder or the federation copy rebuilds renditions in the background.
   let rebuild = false;
   if (b.hls_ladder !== undefined) {

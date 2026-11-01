@@ -100,6 +100,9 @@ export const DEFAULT_SETTINGS = {
   // follows to its peers, and show the ones peers pass on.
   fediverse_share_out: 'false',
   fediverse_share_in: 'false',
+  // Imports (server/imports.js): from YouTube only when an admin turns it on (it uses yt-dlp, and the server's
+  // bandwidth and storage); from Immich always, since it is people's own library.
+  imports_youtube: 'false',
   // Peering directly with other instances (every instance, hub or not). On a hub the hub switches apply.
   network_accept_new: 'true', // lockdown switch: false = no new peers
   network_require_approval: 'false', // new peers wait for an admin

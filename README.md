@@ -74,6 +74,7 @@ around what a video streaming site needs:
   connection and get through Cloudflare's 100 MB limit
 - Uploads stay **drafts** until you click *Save details*
 - **API keys** for ShareX and other uploaders, with a ready-made ShareX config
+- **Import** your videos from YouTube (once the admin turns it on) or Immich, with their dates, details and chapters
 - Lossless remux for H.264, transcoding for MKV, HEVC, WebM and the rest, with NVENC, Quick Sync or AMF
 - **Timeline editor**: trim, split, cut, volume, fades, frame-picked thumbnails; non-destructive, so the
   original is one click away
@@ -158,6 +159,7 @@ around what a video streaming site needs:
 
 ### Privacy
 
+- **Groups**: videos only for the family or a few friends, with a join link
 - Pause watch history, or browse in anonymous mode
 - Download everything you've put on the site
 - Delete your account, with a 7-day grace period

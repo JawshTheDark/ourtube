@@ -23,6 +23,7 @@ export const KINDS = {
   moderation: 'Decisions about your videos, reports and account',
   move: 'Channels you subscribe to moving to another site',
   live: 'Channels you subscribe to going live',
+  group: 'Your groups: videos shared with them, and people joining',
 };
 const DEFAULT_PREFS = { push: Object.keys(KINDS), email: ['moderation'] };
 const RECENT_UPLOAD_MS = 3 * 86400_000;
@@ -56,12 +57,30 @@ export function notify(userId, { kind, title, body = null, url = null, image_url
 
 // ---- fan-out ----------------------------------------------------------------------------------------
 
-/** Tells a channel's subscribers about a new public upload (once per video). */
+/** Tells a channel's subscribers about a new public upload, or a group's members about a video for it (once per video). */
 export function maybeNotifyUpload(videoId) {
-  const v = db.prepare('SELECT id, notified_at, status, visibility, moderation_status FROM videos WHERE id = ?').get(videoId);
-  if (!v || v.notified_at || v.status !== 'ready' || v.visibility !== 'public' || v.moderation_status) return;
+  const v = db.prepare('SELECT id, user_id, title, thumb_path, group_id, notified_at, status, visibility, moderation_status FROM videos WHERE id = ?').get(videoId);
+  if (!v || v.notified_at || v.status !== 'ready' || v.moderation_status || !['public', 'group'].includes(v.visibility)) return;
   db.prepare('UPDATE videos SET notified_at = ? WHERE id = ? AND notified_at IS NULL').run(now(), v.id);
+  if (v.visibility === 'group') return notifyGroupVideo(v);
   enqueueJob('notify.upload', { id: v.id }, { dedupe: `notify-upload:${v.id}` });
+}
+
+/** A video for a group (groups.js) was published: its other members hear about it. */
+function notifyGroupVideo(v) {
+  const g = db.prepare('SELECT id, name FROM user_groups WHERE id = ?').get(v.group_id);
+  if (!g) return;
+  const by = db.prepare('SELECT username, display_name FROM users WHERE id = ?').get(v.user_id) || {};
+  for (const m of db.prepare('SELECT user_id FROM group_members WHERE group_id = ? AND user_id != ?').all(g.id, v.user_id)) {
+    notify(m.user_id, {
+      kind: 'group',
+      title: `${by.display_name || by.username} shared with ${g.name}: ${v.title}`,
+      url: `/watch/${v.id}`,
+      image_url: v.thumb_path ? `/media/thumbs/${v.thumb_path}` : null,
+      actor_label: by.username,
+      dedupe: `group-video:${v.id}`,
+    });
+  }
 }
 
 defineJob('notify.upload', {

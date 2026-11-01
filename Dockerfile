@@ -24,6 +24,13 @@ RUN npm ci --omit=dev && npm cache clean --force \
 RUN "$(node -p "require('ffprobe-static').path")" -version >/dev/null 2>&1 \
     || (apt-get update && apt-get install -y --no-install-recommends ffmpeg && rm -rf /var/lib/apt/lists/* \
         && ffprobe -version >/dev/null)
+# yt-dlp, for importing from YouTube (server/ytdlp.js; admins turn it on): the standalone build for this CPU, owned
+# by the app's user so it can keep itself up to date (`yt-dlp -U`, at most daily).
+ARG TARGETARCH
+RUN mkdir -p /opt/yt-dlp \
+    && node -e "const f=process.argv[1]==='arm64'?'yt-dlp_linux_aarch64':'yt-dlp_linux';fetch('https://github.com/yt-dlp/yt-dlp/releases/latest/download/'+f).then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.arrayBuffer()}).then(b=>require('fs').writeFileSync('/opt/yt-dlp/yt-dlp',Buffer.from(b),{mode:0o755}))" "$TARGETARCH" \
+    && /opt/yt-dlp/yt-dlp --version \
+    && chown -R node:node /opt/yt-dlp
 RUN mkdir -p /data && chown node:node /data
 COPY server ./server
 COPY --from=build /app/web/dist ./web/dist

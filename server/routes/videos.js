@@ -21,6 +21,7 @@ import { indexVideo } from '../search.js';
 import { recordView, recordWatch, viewSource } from '../stats.js';
 import { apCommentCreated, apCommentVerdict, apVideoChanged, sendCommentDelete, sendVideoDelete } from '../ap/deliver.js';
 import { isLinkedCommenter } from '../links.js';
+import { isMember, pickVisibility } from '../groups.js';
 
 export const videosRouter = Router();
 
@@ -35,7 +36,7 @@ videosRouter.use((req, res, next) => {
   next();
 });
 
-const VISIBILITIES = ['public', 'unlisted', 'private'];
+const VISIBILITIES = ['public', 'unlisted', 'private', 'group']; // group: one group's members only (groups.js)
 
 /** The top-voted community title and thumbnail, as columns (see watching.js). */
 const COMMUNITY_COLS = `(SELECT ts.title FROM title_suggestions ts WHERE ts.video_id = v.id AND ts.votes > 0 ORDER BY ts.votes DESC, ts.created_at LIMIT 1) AS c_title,
@@ -44,8 +45,8 @@ const community = (r) => (r.c_title || r.c_thumb ? { title: r.c_title || null, t
 
 export function videoSelect(extra = '') {
   return `SELECT v.*, u.username, u.display_name, u.avatar AS u_avatar, u.support_links AS u_support_links, g.name AS game_name, g.short_name AS game_short,
-    ${COMMUNITY_COLS}${extra ? ', ' + extra : ''}
-    FROM videos v JOIN users u ON u.id = v.user_id LEFT JOIN games g ON g.id = v.game_id`;
+    gr.name AS group_name, ${COMMUNITY_COLS}${extra ? ', ' + extra : ''}
+    FROM videos v JOIN users u ON u.id = v.user_id LEFT JOIN games g ON g.id = v.game_id LEFT JOIN user_groups gr ON gr.id = v.group_id`;
 }
 
 /** A channel's support links (tips, merch, Patreon...), validated when saved. */
@@ -69,6 +70,7 @@ export function serializeVideo(v) {
     title: v.title,
     description: v.description,
     visibility: v.visibility,
+    group: v.group_id ? { id: v.group_id, name: v.group_name || 'Group' } : null,
     // Not published yet: hidden until its details are saved, then it becomes draft_visibility.
     draft: !!v.draft,
     draft_visibility: v.draft ? v.draft_visibility || 'public' : null,
@@ -115,8 +117,10 @@ export function loadVideo(id) {
 /** Hidden or removed videos are only visible to their uploader and moderators. */
 export function canView(v, user) {
   if (v.moderation_status && !(user && (user.id === v.user_id || user.is_moderator))) return false;
-  if (v.visibility !== 'private') return true;
-  return !!user && (user.id === v.user_id || user.is_admin);
+  if (v.visibility === 'public' || v.visibility === 'unlisted') return true;
+  if (!user) return false;
+  if (user.id === v.user_id || user.is_admin) return true;
+  return v.visibility === 'group' && isMember(v.group_id, user.id);
 }
 
 /** Who may play the file: removed videos only by moderators (the uploader sees the details, not the video). */
@@ -389,8 +393,11 @@ videosRouter.post('/', requireAuth, videoUpload, (req, res) => {
   const { used, quota } = storageFor(req.user.id);
   if (quota > 0 && used + file.size > quota) throw refuse(overQuota(used, quota));
   let gameId = null;
+  let choice;
   try {
     gameId = resolveGame(req.body.game, req.user) ?? null;
+    // With an API key, the key's defaults fill in what the request leaves out.
+    choice = pickVisibility(req.user, VISIBILITIES.includes(req.body.visibility) ? req.body.visibility : req.apiKey?.visibility || 'public', req.body.group_id);
   } catch (e) {
     throw refuse(e);
   }
@@ -402,19 +409,18 @@ videosRouter.post('/', requireAuth, videoUpload, (req, res) => {
 
   const fallbackTitle = path.basename(file.originalname, ext).replace(/_+/g, ' ').trim().slice(0, 120);
   const title = str(req.body.title, 120).trim() || fallbackTitle || 'Untitled video';
-  // With an API key, the key's defaults fill in what the request leaves out.
   const key = req.apiKey;
-  const visibility = VISIBILITIES.includes(req.body.visibility) ? req.body.visibility : key?.visibility || 'public';
+  const { visibility, group_id: groupId } = choice;
   const t = now();
   const allowClips = req.body.allow_clips === 'true' || req.body.allow_clips === true ? 1 : 0;
   // The upload page sends drafts: nothing is published until its details are saved.
   const draft = req.body.draft !== undefined ? (req.body.draft === 'true' || req.body.draft === true ? 1 : 0) : key && !key.publish ? 1 : 0;
 
   db.prepare(
-    "INSERT INTO videos (id, user_id, title, description, visibility, status, original_name, original_path, size_bytes, created_at, updated_at, game_id, allow_clips, draft, draft_visibility) VALUES (?, ?, ?, ?, ?, 'queued', ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    "INSERT INTO videos (id, user_id, title, description, visibility, status, original_name, original_path, size_bytes, created_at, updated_at, game_id, allow_clips, draft, draft_visibility, group_id) VALUES (?, ?, ?, ?, ?, 'queued', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
   ).run(
     id, req.user.id, title, str(req.body.description), draft ? 'private' : visibility, file.originalname.slice(0, 255), originalName, file.size, t, t, gameId, allowClips,
-    draft, draft ? visibility : null,
+    draft, draft ? visibility : null, groupId,
   );
   setTags(id, parseTags(req.body.tags));
   indexVideo(id);
@@ -451,7 +457,9 @@ videosRouter.patch('/:id', requireAuth, (req, res) => {
   // A draft stays private until it is saved with `publish`; until then the choice is kept for later.
   const publishing = !!v.draft && b.publish === true;
   const wanted = b.visibility !== undefined ? b.visibility : v.draft ? v.draft_visibility || 'public' : v.visibility;
-  if (!VISIBILITIES.includes(wanted)) throw new HttpError(400, 'Visibility must be public, unlisted or private');
+  if (!VISIBILITIES.includes(wanted)) throw new HttpError(400, 'Visibility must be public, unlisted, private or group');
+  // A group video keeps its group unless another is picked; other visibilities have none.
+  const { group_id: groupId } = pickVisibility(req.user.id === v.user_id ? req.user : { ...req.user, id: v.user_id }, wanted, b.group_id !== undefined ? b.group_id : v.group_id);
   const visibility = v.draft && !publishing ? 'private' : wanted;
   const federate = b.federate !== undefined ? (b.federate ? 1 : 0) : v.federate;
   const commentMode = b.comment_mode !== undefined ? b.comment_mode : v.comment_mode || 'inherit';
@@ -463,12 +471,12 @@ videosRouter.patch('/:id', requireAuth, (req, res) => {
   const t = now();
   db.prepare(
     `UPDATE videos SET title = ?, description = ?, visibility = ?, federate = ?, comment_mode = ?, game_id = ?, allow_clips = ?, allow_original_download = ?, updated_at = ?,
-       draft = ?, draft_visibility = ?, published_at = CASE WHEN ? THEN (CASE WHEN status = 'ready' THEN ? ELSE NULL END) ELSE published_at END WHERE id = ?`,
+       draft = ?, draft_visibility = ?, group_id = ?, published_at = CASE WHEN ? THEN (CASE WHEN status = 'ready' THEN ? ELSE NULL END) ELSE published_at END WHERE id = ?`,
   ).run(
     title, description, visibility, federate, commentMode, gameId, allowClips, allowOriginal, t,
-    v.draft && !publishing ? 1 : 0, v.draft && !publishing ? wanted : null, publishing ? 1 : 0, t, v.id,
+    v.draft && !publishing ? 1 : 0, v.draft && !publishing ? wanted : null, groupId, publishing ? 1 : 0, t, v.id,
   );
-  if (visibility === 'public') maybeNotifyUpload(v.id);
+  if (visibility === 'public' || visibility === 'group') maybeNotifyUpload(v.id);
   apVideoChanged(v.id);
   if (b.tags !== undefined) setTags(v.id, parseTags(b.tags));
   indexVideo(v.id);

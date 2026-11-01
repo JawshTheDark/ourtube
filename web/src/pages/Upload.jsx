@@ -5,7 +5,8 @@ import { useAuth, useTitle } from '../auth.jsx';
 import { Icon } from '../components/Icons.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { GameField } from '../components/GameField.jsx';
-import { formatBytes, copyText, VISIBILITY_HELP } from '../util.js';
+import { VisibilityField } from '../components/VisibilityField.jsx';
+import { formatBytes, copyText } from '../util.js';
 
 const VIDEO_RE = /\.(mp4|mkv|mov|webm|avi|m4v|ts|wmv|flv|mpg|mpeg|3gp|mts|m2ts)$/i;
 
@@ -69,7 +70,7 @@ export default function Upload() {
       try {
         const { video } = await api(`/videos/${it.video.id}`, {
           method: 'PATCH',
-          body: { title: it.title, description: it.description, tags: it.tags, visibility: it.visibility, game: it.game, allow_clips: it.allow_clips, publish },
+          body: { title: it.title, description: it.description, tags: it.tags, visibility: it.visibility, group_id: it.group_id, game: it.game, allow_clips: it.allow_clips, publish },
         });
         update(key, { video, dirty: false, saving: false });
         if (publish) toast(it.visibility === 'private' ? 'Details saved' : 'Details saved and published');
@@ -99,7 +100,7 @@ export default function Upload() {
           const cur = itemsRef.current.find((x) => x.key === key) || it;
           return api('/videos', {
             method: 'POST',
-            body: { upload_id: uploadId, title: cur.title, description: cur.description, tags: cur.tags, visibility: cur.visibility, game: cur.game, allow_clips: cur.allow_clips, draft: true },
+            body: { upload_id: uploadId, title: cur.title, description: cur.description, tags: cur.tags, visibility: cur.visibility, group_id: cur.group_id, game: cur.game, allow_clips: cur.allow_clips, draft: true },
           });
         })
         .then(async ({ video }) => {
@@ -165,6 +166,9 @@ export default function Upload() {
     <div className="page">
       <div className="page-head">
         <h1>Upload videos</h1>
+        <Link to="/import" className="btn btn-ghost">
+          <Icon name="download" /> Import from YouTube or Immich
+        </Link>
         {items.length > 0 && (
           <button className="btn" onClick={() => inputRef.current.click()}>
             <Icon name="add" /> Add more
@@ -286,15 +290,7 @@ function UploadItem({ it, onChange, onSave, onCancel, onRemove, onRetry }) {
           <span className="hint">Separate tags with commas. Tags become the filter chips on the home page.</span>
         </div>
         <GameField value={it.game} onChange={(game) => onChange({ game })} />
-        <div className="field">
-          <label>Visibility</label>
-          <select className="select" value={it.visibility} onChange={(e) => onChange({ visibility: e.target.value })}>
-            <option value="public">Public</option>
-            <option value="unlisted">Unlisted</option>
-            <option value="private">Private</option>
-          </select>
-          <span className="hint">{VISIBILITY_HELP[it.visibility]}</span>
-        </div>
+        <VisibilityField visibility={it.visibility} groupId={it.group_id} onChange={onChange} />
         <label className="checkbox field">
           <input type="checkbox" checked={it.allow_clips} onChange={(e) => onChange({ allow_clips: e.target.checked })} />
           <span>

@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { VISIBLE_TO } from '../groups.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import bcrypt from 'bcryptjs';
@@ -190,9 +191,9 @@ meRouter.get('/subscriptions', (req, res) => {
 meRouter.get('/liked', (req, res) => {
   const rows = db
     .prepare(
-      `${videoSelect('l.created_at AS liked_at')} JOIN likes l ON l.video_id = v.id AND l.user_id = ? WHERE l.value = 1 AND v.status = 'ready' AND v.moderation_status IS NULL AND (v.visibility != 'private' OR v.user_id = ?) ORDER BY l.created_at DESC LIMIT 200`,
+      `${videoSelect('l.created_at AS liked_at')} JOIN likes l ON l.video_id = v.id AND l.user_id = ? WHERE l.value = 1 AND v.status = 'ready' AND v.moderation_status IS NULL AND ${VISIBLE_TO()} ORDER BY l.created_at DESC LIMIT 200`,
     )
-    .all(req.user.id, req.user.id);
+    .all(req.user.id, req.user.id, req.user.id);
   const videos = rows.map((r) => ({ ...serializeVideo(r), _at: r.liked_at }));
   if (networkActive()) {
     const remote = db
@@ -212,9 +213,9 @@ meRouter.get('/liked', (req, res) => {
 meRouter.get('/history', (req, res) => {
   const rows = db
     .prepare(
-      `${videoSelect('h.position, h.watched_at')} JOIN history h ON h.video_id = v.id AND h.user_id = ? WHERE v.status = 'ready' AND v.moderation_status IS NULL AND (v.visibility != 'private' OR v.user_id = ?) ORDER BY h.watched_at DESC LIMIT 200`,
+      `${videoSelect('h.position, h.watched_at')} JOIN history h ON h.video_id = v.id AND h.user_id = ? WHERE v.status = 'ready' AND v.moderation_status IS NULL AND ${VISIBLE_TO()} ORDER BY h.watched_at DESC LIMIT 200`,
     )
-    .all(req.user.id, req.user.id);
+    .all(req.user.id, req.user.id, req.user.id);
   res.json({ videos: rows.map((r) => ({ ...serializeVideo(r), watched_at: r.watched_at })) });
 });
 

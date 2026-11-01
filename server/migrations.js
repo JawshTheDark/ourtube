@@ -997,6 +997,61 @@ CREATE INDEX idx_network_video_shares_via ON network_video_shares(via_instance_i
 `);
     },
   },
+  {
+    version: 23,
+    name: 'imports from YouTube and Immich',
+    up(db) {
+      db.exec(`
+CREATE TABLE imports (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  source TEXT NOT NULL,                  -- youtube | immich
+  ref TEXT NOT NULL,                     -- what to fetch: the YouTube address, or the Immich asset id
+  import_key TEXT NOT NULL,              -- the video's import_key once made (youtube#<id>, immich#<host>#<asset id>)
+  title TEXT NOT NULL DEFAULT '',
+  options TEXT NOT NULL DEFAULT '{}',    -- visibility, group, original dates, how to reach Immich
+  status TEXT NOT NULL DEFAULT 'queued', -- queued | running | done | failed
+  progress REAL NOT NULL DEFAULT 0,
+  error TEXT,
+  video_id TEXT,
+  created_at INTEGER NOT NULL,
+  finished_at INTEGER
+);
+CREATE INDEX idx_imports_user ON imports(user_id, created_at);
+CREATE TABLE immich_accounts (
+  user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  url TEXT NOT NULL,                     -- the Immich server
+  api_key TEXT NOT NULL,                 -- an Immich API key (never shown again)
+  name TEXT,                             -- the Immich account it belongs to
+  created_at INTEGER NOT NULL
+);
+`);
+    },
+  },
+  {
+    version: 24,
+    name: 'groups: videos for a family or a circle of friends only',
+    up(db) {
+      db.exec(`
+CREATE TABLE user_groups (
+  id TEXT PRIMARY KEY,
+  owner_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  invite_token TEXT UNIQUE,              -- the join link's code, while it is on
+  created_at INTEGER NOT NULL
+);
+CREATE TABLE group_members (
+  group_id TEXT NOT NULL REFERENCES user_groups(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  added_at INTEGER NOT NULL,
+  PRIMARY KEY (group_id, user_id)
+);
+CREATE INDEX idx_group_members_user ON group_members(user_id);
+`);
+      addColumn(db, 'videos', 'group_id', 'TEXT'); // visibility 'group': only that group's members (and admins) see it
+      db.exec('CREATE INDEX IF NOT EXISTS idx_videos_group ON videos(group_id) WHERE group_id IS NOT NULL');
+    },
+  },
 ];
 
 export function currentVersion(db) {

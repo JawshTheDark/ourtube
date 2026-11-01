@@ -23,6 +23,7 @@ needs before it starts are environment variables.
 | `TRUST_PROXY` | unset (`1` in Docker) | `1` behind a reverse proxy, so the app sees real client addresses and HTTPS |
 | `SETUP_CODE` | random | The code needed to create the first (admin) account |
 | `UPDATE_CHECK_URL` | GitHub | Where to read the newest version from, or `off` to never check (see [Upgrading and Backups](Upgrading-and-Backups.md#checking-the-version)) |
+| `YTDLP_PATH` | `/opt/yt-dlp/yt-dlp` in Docker, else `yt-dlp` on your PATH | The yt-dlp used for [imports from YouTube](#importing-from-youtube) |
 | `PEERTUBE_DIRECTORY_URL` | `https://instances.joinpeertube.org` | The directory of PeerTube servers that Admin → Network browses (see [Fediverse](Fediverse.md#following-out)) |
 | `FFMPEG_PATH`, `FFPROBE_PATH` | bundled | Use another FFmpeg, for example one built with your GPU's encoder. Where nothing is bundled for your machine (ffprobe on Linux ARM), the one on your PATH is used. |
 | `LOG_REQUESTS` | unset | `1` prints every request (same as `--log`) |
@@ -53,11 +54,27 @@ on a version) from `.env`.
 | Adaptive streaming (HLS) | `hls_ladder` | off | `off`, `720` (720p plus source) or `full` (1080p, 720p and 480p plus source) |
 | 720p copy for other platforms | `federation_rendition` | on | A small MP4 for services like Mastodon that only cache small remote videos |
 | Show dislikes | `show_dislikes` | on | Uploaders always see their own |
+| Imports from YouTube | `imports_youtube` | off | Lets people [import their videos from YouTube](Uploading-and-Editing.md#importing-from-youtube-and-immich); see [below](#importing-from-youtube) |
 
 **When is an upload transcoded?** An upload is remuxed (copied into an MP4 without re-encoding, in seconds and
 with no quality loss) when it is H.264 video in yuv420p with AAC or MP3 audio, no taller than the maximum
 resolution. Anything else is transcoded to H.264 and AAC. A remuxed upload's file is deleted afterwards, since
 the MP4 holds the same data; a transcoded upload's file is kept in `originals/` unless *Delete originals* is on.
+
+### Importing from YouTube
+
+Imports from YouTube use [yt-dlp](https://github.com/yt-dlp/yt-dlp), which comes in the Docker image (outside
+Docker, install it yourself, or point `YTDLP_PATH` at it). They're off until you tick **Let people import their
+videos from YouTube**, because YouTube changes often and sometimes refuses servers, so imports can break without
+warning. To keep up, OurTube updates yt-dlp itself once a day, and fetches one video at a time.
+
+When YouTube refuses with *Sign in to confirm you're not a bot*, which happens most to servers in data centers, give
+the server a YouTube login's cookies: sign in to YouTube in a browser (a spare account is wise, since YouTube may
+block an account used this way), export its cookies as `cookies.txt` with a browser extension, and save the file as
+`youtube-cookies.txt` in the data folder. It's used from the next import on. Delete it to stop.
+
+Imports from Immich need nothing from you; people bring their own shared link or API key. An Immich on your own
+network can only be reached by admins.
 
 ### Email
 
@@ -176,7 +193,8 @@ data/
 ├── exports/         GIF and MP4 exports (kept for a day)
 ├── backups/         database copies made before migrations and deploys
 ├── uploads/         uploads arriving in pieces (unfinished ones are deleted after a day)
-└── tmp/             work files and single-request uploads in progress (emptied at every start)
+├── tmp/             work files, imports and single-request uploads in progress (emptied at every start)
+└── youtube-cookies.txt   only if you add it, for imports from YouTube
 ```
 
 **Back up the whole folder and you have everything**, including the keys that identify your server to the

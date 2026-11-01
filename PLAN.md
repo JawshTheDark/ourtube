@@ -58,6 +58,8 @@ order, so M3 shipped as v0.6.0 ahead of M2 (now v0.7.0), and later milestones mo
 | Browse joinpeertube.org's directory of PeerTube servers in Admin and follow them with a click | Done | v1.22.0, 2026-10-28 |
 | Embeds: an /embed player, oEmbed for WordPress and others, and embed code under Share | Done | v1.23.0, 2026-11-01 |
 | Published images (x86 and ARM) on the GitHub Container Registry, so `docker compose pull` and Dockge's update button update a server | Done | v1.23.0, 2026-11-01 |
+| Groups: videos only for a family or circle of friends, with join links and notifications | Done | v1.24.0, 2026-11-01 |
+| Import from YouTube (yt-dlp, off until an admin turns it on, updated daily) and from Immich (a shared link or an API key) | Done | v1.24.0, 2026-11-01 |
 | Servers linked (clips.irc.so hub; laptop and clips.6697.pro members) | Done | Linked 2026-10-25, checked after every deploy |
 
 ### Needs you

@@ -55,6 +55,7 @@ export function Sidebar({ mini = false, drawer = false, onClose }) {
           <Item to="/history" icon="history" label="History" />
           <Item to="/liked" icon="thumb_up" label="Liked" />
           <Item to="/watch-later" icon="watch_later" label="Watch later" />
+          <Item to="/groups" icon="group" label="Groups" />
           <Item to="/playlists" icon="playlist" label="Playlists" />
           <Item to="/studio" icon="video" label="Studio" />
           {user.is_admin && !mini && <Item to="/admin" icon="shield" label="Admin" />}
