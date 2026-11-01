@@ -13,6 +13,7 @@
 import { Router } from 'express';
 import { db, getSettings } from './db.js';
 import { HttpError, escapeHtml } from './util.js';
+import { VIEW_SHARE } from './routes/videos.js';
 
 export const embedRouter = Router();
 
@@ -90,14 +91,24 @@ embedRouter.get('/embed/:id', (req, res) => {
 <div class="bar"><a href="${escapeHtml(watchUrl)}" target="_blank" rel="noopener">${escapeHtml(v.title)}</a><span class="site">${escapeHtml(settings.site_name)}</span></div>
 <script>
   const v = document.getElementById('v');
+  // A view counts once three quarters of the video were played (the parts actually played, as on the site).
+  const parts = new Set();
+  let last = null;
   let counted = false;
-  v.addEventListener('play', () => {
-    document.body.classList.add('playing');
-    if (!counted) {
-      counted = true;
-      fetch(${viewUrl}, { method: 'POST', mode: 'no-cors' }).catch(() => {});
+  v.addEventListener('timeupdate', () => {
+    const t = v.currentTime;
+    const d = v.duration;
+    if (!counted && last !== null && !v.paused && d > 0 && isFinite(d) && t > last && t - last < 2) {
+      for (let p = Math.floor((last / d) * 100); p <= Math.min(99, Math.floor((t / d) * 100)); p++) parts.add(p);
+      if (parts.size >= ${VIEW_SHARE * 100}) {
+        counted = true;
+        fetch(${viewUrl} + '?played=' + Math.round(parts.size * d) / 100, { method: 'POST', mode: 'no-cors' }).catch(() => {});
+      }
     }
+    last = t;
   });
+  v.addEventListener('seeking', () => (last = null));
+  v.addEventListener('play', () => document.body.classList.add('playing'));
   v.addEventListener('pause', () => document.body.classList.remove('playing'));
 </script>
 </body>

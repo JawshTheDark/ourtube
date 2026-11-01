@@ -194,9 +194,26 @@ test('"For you" says why, and listens to "not interested" and "less of this"', a
   assert.equal((await anon.get('/api/feed/for-you')).status, 401);
 });
 
+test('a view counts once three quarters of the video were played, once per viewer for a while', async () => {
+  const { duration, views } = (await admin.get(`/api/videos/${v1.id}`)).data.video;
+  // Opening it puts it in history, but it isn't a view yet; nor is half of it.
+  assert.equal((await bob.post(`/api/videos/${v1.id}/view`, {})).data.counted, false);
+  assert.ok((await bob.get('/api/me/history')).data.videos.some((v) => v.id === v1.id));
+  assert.equal((await bob.post(`/api/videos/${v1.id}/view`, { played: duration / 2 })).data.counted, false);
+  const r = await bob.post(`/api/videos/${v1.id}/view`, { played: duration * 0.75 });
+  assert.equal(r.data.counted, true);
+  assert.equal(r.data.views, views + 1);
+  assert.equal((await bob.post(`/api/videos/${v1.id}/view`, { played: duration })).data.counted, false, 'once per viewer');
+  // Embeds and other servers' pages send it in the address.
+  const r2 = await new Client(inst.url).req('POST', `/api/videos/${v1.id}/view?played=${duration}`);
+  assert.equal(r2.data.counted, true);
+  assert.equal(r2.data.views, views + 2);
+});
+
 test('analytics: daily views, sources, watch time and retention, for the owner only', async () => {
-  await anon.post(`/api/videos/${v2.id}/view`, { ref: 'https://discord.com/channels/1/2' });
-  await carol.post(`/api/videos/${v2.id}/view`, { from: 'search' });
+  const { duration } = (await admin.get(`/api/videos/${v2.id}`)).data.video;
+  await anon.post(`/api/videos/${v2.id}/view`, { played: duration, ref: 'https://discord.com/channels/1/2' });
+  await carol.post(`/api/videos/${v2.id}/view`, { played: duration, from: 'search' });
   await anon.post(`/api/videos/${v2.id}/watch`, { seconds: 3.5, buckets: [0, 1, 2, 3, 4, 10, 49, 99, -1] });
   const a = (await admin.get(`/api/studio/analytics?video=${v2.id}`)).data;
   assert.equal(a.totals.views, 2);

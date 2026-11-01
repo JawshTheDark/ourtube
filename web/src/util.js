@@ -184,6 +184,51 @@ export function isAnonymous() {
   }
 }
 
+/** How much of a video has to be played before it counts as a view (the server checks it too). */
+const VIEW_SHARE = 0.75;
+
+/**
+ * Calls count(played seconds) once three quarters of the video in videoRef have been played, for the video named
+ * by key (null while there's nothing to watch). Only parts actually played count: skipping ahead doesn't, and
+ * watching a part again doesn't add up.
+ */
+export function usePlayedView(videoRef, key, count) {
+  useEffect(() => {
+    const el = videoRef.current;
+    if (!el || !key) return;
+    const parts = new Set(); // which hundredths of the video were played
+    let last = null;
+    let done = false;
+    const tick = () => {
+      const t = el.currentTime;
+      const d = el.duration;
+      if (!done && last !== null && !el.paused && d > 0 && Number.isFinite(d) && t > last && t - last < 2) {
+        for (let p = Math.floor((last / d) * 100); p <= Math.min(99, Math.floor((t / d) * 100)); p++) parts.add(p);
+        if (parts.size >= VIEW_SHARE * 100) {
+          done = true;
+          count(Math.round(parts.size * d) / 100);
+        }
+      }
+      last = t;
+    };
+    const reset = () => {
+      last = null;
+    };
+    el.addEventListener('timeupdate', tick);
+    el.addEventListener('seeking', reset);
+    return () => {
+      el.removeEventListener('timeupdate', tick);
+      el.removeEventListener('seeking', reset);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
+}
+
+/** Counts a view of another server's video there, without saying who (like an embed). */
+export function countRemoteView(remote, played) {
+  fetch(`${remote.peer_url}/api/videos/${encodeURIComponent(remote.remote_id)}/view?played=${played}`, { method: 'POST', mode: 'no-cors' }).catch(() => {});
+}
+
 export function setAnonymous(on) {
   try {
     localStorage.setItem('ct_anon', on ? '1' : '0');

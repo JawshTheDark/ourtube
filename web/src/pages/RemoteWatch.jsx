@@ -11,7 +11,7 @@ import { Icon } from '../components/Icons.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { RichText } from '../components/RichText.jsx';
 import { ReportButton } from '../components/ReportDialog.jsx';
-import { compact, formatDate, copyText } from '../util.js';
+import { compact, formatDate, copyText, countRemoteView, usePlayedView } from '../util.js';
 import { PlaylistPanel, SaveDialog } from '../components/Playlists.jsx';
 import { useStartParty } from './Party.jsx';
 
@@ -52,8 +52,6 @@ export default function RemoteWatch() {
       .then((r) => {
         if (dead) return;
         setData(r);
-        // Count the view on the instance that hosts it (anonymous, like an embed).
-        fetch(`${r.video.remote.peer_url}/api/videos/${encodeURIComponent(r.video.remote.remote_id)}/view`, { method: 'POST', mode: 'no-cors' }).catch(() => {});
         api(`/network/channels/${peerId}/${encodeURIComponent(r.video.uploader.username)}`)
           .then((c) => !dead && setChannel(c))
           .catch(() => {});
@@ -65,6 +63,8 @@ export default function RemoteWatch() {
   }, [peerId, remoteId]);
 
   useTitle(data?.video.title);
+  // The view counts on the server that hosts it once most of it was watched (anonymous, like an embed).
+  usePlayedView(videoRef, data ? `${peerId}/${remoteId}` : null, (played) => countRemoteView(data.video.remote, played));
 
   const toggleTheater = useCallback(() => {
     setTheater((t) => {

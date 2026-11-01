@@ -15,7 +15,7 @@ import { ClipDialog, TimeField } from '../components/ClipDialog.jsx';
 import { ContributeMenu, DownloadMenu, SupportLinks } from '../components/WatchExtras.jsx';
 import { PlaylistPanel, SaveDialog } from '../components/Playlists.jsx';
 import { useStartParty } from './Party.jsx';
-import { cameFrom, compact, displayed, formatDate, formatDuration, formatPrecise, copyText, isAnonymous, timeAgo, urlSeconds, usePref } from '../util.js';
+import { cameFrom, compact, displayed, formatDate, formatDuration, formatPrecise, copyText, isAnonymous, timeAgo, urlSeconds, usePlayedView, usePref } from '../util.js';
 
 /**
  * Reports how much of the video was played (seconds, and which 2% parts) for the creator's analytics.
@@ -287,6 +287,7 @@ export default function Watch() {
   const nav = useNavigate();
   const [params] = useSearchParams();
   const videoRef = useRef(null);
+  const opened = useRef({});
   const [video, setVideo] = useState(null);
   const [related, setRelated] = useState([]);
   const [error, setError] = useState(null);
@@ -312,13 +313,13 @@ export default function Watch() {
     setExpanded(false);
     setRelated([]);
     window.scrollTo(0, 0);
+    opened.current = { from: cameFrom(), ref: document.referrer || '' };
     api(`/videos/${id}`)
       .then((r) => {
         if (dead) return;
         setVideo(r.video);
-        return api(`/videos/${id}/view`, { method: 'POST', body: { anonymous: isAnonymous(), from: cameFrom(), ref: document.referrer || '' } }).then(
-          (v) => !dead && setVideo((x) => (x ? { ...x, views: v.views } : x)),
-        );
+        // Into history now; the view itself counts once most of it was watched (below).
+        return api(`/videos/${id}/view`, { method: 'POST', body: { anonymous: isAnonymous() } });
       })
       .catch((e) => !dead && setError(e));
     api(`/videos/${id}/related`)
@@ -364,6 +365,11 @@ export default function Watch() {
   };
 
   useWatchReport(id, videoRef, video?.status === 'ready' && !!video?.video_url);
+  usePlayedView(videoRef, video?.status === 'ready' && video?.video_url ? id : null, (played) =>
+    api(`/videos/${id}/view`, { method: 'POST', body: { played, anonymous: isAnonymous(), ...opened.current } })
+      .then((v) => setVideo((x) => (x?.id === id ? { ...x, views: v.views } : x)))
+      .catch(() => {}),
+  );
 
   const onProgress = useCallback(
     (pos) => {

@@ -8,7 +8,7 @@ import { Icon } from '../components/Icons.jsx';
 import { ServerTag } from '../components/ServerTag.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { Empty, shortsPath } from '../components/VideoCard.jsx';
-import { cameFrom, compact, copyText, displayed, isAnonymous, usePaged, usePref } from '../util.js';
+import { cameFrom, compact, copyText, countRemoteView, displayed, isAnonymous, usePaged, usePlayedView, usePref } from '../util.js';
 
 const keyOf = (v) => (v.remote ? `n:${v.remote.peer_id}:${v.remote.remote_id}` : `v:${v.id}`);
 const watchPath = (v) => (v.remote ? `/n/${v.remote.peer_id}/${encodeURIComponent(v.remote.remote_id)}` : `/watch/${v.id}`);
@@ -157,7 +157,9 @@ export default function Shorts() {
   const [commentsOpen, setCommentsOpen] = useState(false);
   const feedRef = useRef(null);
   const videoRef = useRef(null);
-  const counted = useRef(new Set());
+  const opened = useRef(new Set());
+  const cameIn = useRef(null);
+  if (!cameIn.current) cameIn.current = { from: cameFrom(), ref: document.referrer || '' };
   const anchor = useRef(null);
 
   useEffect(() => {
@@ -201,7 +203,8 @@ export default function Shorts() {
     return () => io.disconnect();
   }, [list.length]);
 
-  // The address follows along (so it can be shared), the view is counted once, and more load near the end.
+  // The address follows along (so it can be shared), each Short goes into history once (it counts as a view
+  // once most of it was watched, below), and more load near the end.
   useEffect(() => {
     if (!current) return;
     const key = keyOf(current);
@@ -211,14 +214,18 @@ export default function Shorts() {
         .then((d) => setDetails((x) => ({ ...x, [key]: d })))
         .catch(() => {});
     }
-    if (!counted.current.has(key)) {
-      counted.current.add(key);
-      if (current.remote) fetch(`${current.remote.peer_url}/api/videos/${encodeURIComponent(current.remote.remote_id)}/view`, { method: 'POST', mode: 'no-cors' }).catch(() => {});
-      else api(`/videos/${current.id}/view`, { method: 'POST', body: { anonymous: isAnonymous(), from: cameFrom(), ref: document.referrer || '' } }).catch(() => {});
+    if (!opened.current.has(key)) {
+      opened.current.add(key);
+      if (!current.remote) api(`/videos/${current.id}/view`, { method: 'POST', body: { anonymous: isAnonymous() } }).catch(() => {});
     }
     if (active >= list.length - 3 && hasMore && !loading) loadMore();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current && keyOf(current), list.length, hasMore, loading]);
+
+  usePlayedView(videoRef, current ? keyOf(current) : null, (played) => {
+    if (current.remote) countRemoteView(current.remote, played);
+    else api(`/videos/${current.id}/view`, { method: 'POST', body: { played, anonymous: isAnonymous(), ...cameIn.current } }).catch(() => {});
+  });
 
   const go = useCallback(
     (step) => {

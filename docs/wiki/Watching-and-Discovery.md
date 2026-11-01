@@ -45,7 +45,7 @@ and download the original when the uploader allows it.
 tells WordPress where its player is (oEmbed). If WordPress won't embed it (it limits which sites it trusts), paste
 the embed code into a **Custom HTML** block instead. The player is `/embed/<id>`, and takes `?start=<seconds>`,
 `?autoplay=1` (muted, as browsers require) and `?loop=1`. Public and unlisted videos can be embedded; private
-ones can't. Plays from embeds count as views.
+ones can't. Watching a video in an embed counts as a view the same way as on the site (see [Analytics](#analytics)).
 
 Times in descriptions and comments (`1:23`, `1:02:03`) are links that jump the video there. While writing a
 comment, **Add time** puts in the moment the video is at.
@@ -186,7 +186,12 @@ the admin has set up email and you've confirmed your address).
 ## Analytics
 
 Studio → *Analytics* shows views and watch time per day, where views came from, your top videos, and a
-retention curve per video. Only counts are stored, never who watched, and anonymous mode sends nothing.
+retention curve per video. Only counts are stored, never who watched, and anonymous mode sends nothing but the view.
+
+**What counts as a view:** playing at least three quarters of a video, on the site, in the app, in an embed or
+from another server. Only the parts actually played count, so skipping ahead doesn't, and watching a part again
+doesn't add up. Each viewer counts once every 6 hours; viewers who aren't signed in are told apart by their
+network address and browser. Opening a video still puts it in your history right away.
 
 ## Privacy
 

@@ -661,13 +661,24 @@ function recordsHistory(req) {
   return !db.prepare('SELECT history_paused FROM users WHERE id = ?').get(req.user.id)?.history_paused;
 }
 
+/** How much of a video someone has to play before it counts as a view. */
+export const VIEW_SHARE = 0.75;
+
+// Opening a video records history; it counts as a view once the player says three quarters of it were played
+// (`played`, in seconds of the video actually played, in the body, or in the query from pages on other sites),
+// once per viewer every 6 hours.
 videosRouter.post('/:id/view', (req, res) => {
   const v = getViewable(req.params.id, req.user);
   const anonymous = req.body?.anonymous === true;
   const key = req.user && !anonymous ? `u:${req.user.id}` : `a:${sha256(`${req.ip || ''}|${req.get('user-agent') || ''}`)}`;
   const t = now();
-  const prev = db.prepare('SELECT viewed_at FROM views WHERE video_id = ? AND viewer_key = ?').get(v.id, key);
-  if (!prev || t - prev.viewed_at > 6 * 3600 * 1000) {
+  const played = Number(req.body?.played ?? req.query.played);
+  // A little slack, since the browser may measure the length slightly differently.
+  const watched = Number.isFinite(played) && played >= (v.duration || 0) * VIEW_SHARE * 0.97;
+  const prev = watched && db.prepare('SELECT viewed_at FROM views WHERE video_id = ? AND viewer_key = ?').get(v.id, key);
+  let counted = false;
+  if (watched && (!prev || t - prev.viewed_at > 6 * 3600 * 1000)) {
+    counted = true;
     db.prepare('INSERT INTO views (video_id, viewer_key, viewed_at) VALUES (?, ?, ?) ON CONFLICT(video_id, viewer_key) DO UPDATE SET viewed_at = excluded.viewed_at').run(v.id, key, t);
     db.prepare('UPDATE videos SET views = views + 1 WHERE id = ?').run(v.id);
     let selfHost = req.get('host') || '';
@@ -681,7 +692,7 @@ videosRouter.post('/:id/view', (req, res) => {
       'INSERT INTO history (user_id, video_id, watched_at, position) VALUES (?, ?, ?, 0) ON CONFLICT(user_id, video_id) DO UPDATE SET watched_at = excluded.watched_at',
     ).run(req.user.id, v.id, t);
   }
-  res.json({ views: db.prepare('SELECT views FROM videos WHERE id = ?').get(v.id).views });
+  res.json({ views: db.prepare('SELECT views FROM videos WHERE id = ?').get(v.id).views, counted });
 });
 
 // Playback report for analytics (watch time and retention), sent by the player as a beacon.
