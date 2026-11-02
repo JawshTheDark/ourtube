@@ -204,8 +204,36 @@ services:
     volumes:
       - ./data:/data
     ports:
-      - "3000:3000"    # or leave this out and join your reverse proxy's network (see docker-compose.yml)
+      - "3000:3000"
 ```
+
+**With Nginx Proxy Manager or another proxy in Docker**, join the proxy's network in the stack itself, not with
+`docker network connect`: the stack manager makes a new container on every update, and a network joined by hand is
+lost each time. Use this instead, with your proxy's network name in place of `proxy-net`:
+
+```yaml
+services:
+  cliptube:
+    image: ghcr.io/jawshthedark/ourtube:latest
+    container_name: cliptube
+    restart: unless-stopped
+    user: "1000:1000"
+    environment:
+      - TRUST_PROXY=1
+      - DATA_DIR=/data
+    volumes:
+      - ./data:/data
+    networks:
+      - default
+      - proxy-net
+
+networks:
+  proxy-net:
+    external: true
+```
+
+Then point the proxy at `cliptube`, port `3000` (see [Nginx Proxy Manager](#nginx-proxy-manager)). Keep `default`
+in the list: other services in the stack, like MediaMTX for live streaming, reach OurTube over it.
 
 The setup code is in the stack's log. Live streaming needs the MediaMTX service and `live/mediamtx.yml` from the
 repository (see `docker-compose.yml`). If your stack is a checkout of the repository instead, keep your changes in
