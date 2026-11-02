@@ -217,11 +217,13 @@ site is HTTPS.
 
 **Cause:** OurTube doesn't take the visitor's address and the scheme from the proxy's `X-Forwarded-For` and
 `X-Forwarded-Proto` headers, so every visitor looks like the proxy. Either `TRUST_PROXY` isn't set (the Docker image
-sets it; outside Docker you must), or the proxy doesn't send those headers.
+sets it; outside Docker you must), the proxy doesn't send those headers, or the proxy reaches OurTube from a public
+address, which `TRUST_PROXY=1` doesn't trust.
 
 **Fix:** set `TRUST_PROXY=1` and restart, and make sure the proxy sends both headers (Nginx Proxy Manager and Caddy
-do; for nginx, see [the example](Installation.md#nginx-with-lets-encrypt)). Set the **Public URL** in Admin →
-Overview too.
+do; for nginx, see [the example](Installation.md#nginx-with-lets-encrypt)). If the proxy is on another machine with a
+public address, set `TRUST_PROXY` to that address instead; behind Cloudflare and your own proxy, set it to `2` (see
+[`TRUST_PROXY`](Configuration.md#environment-variables)). Set the **Public URL** in Admin → Overview too.
 
 ### Link previews in Discord show the wrong address, or none
 

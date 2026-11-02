@@ -57,7 +57,7 @@ These names come up on every page of this wiki:
 | **Data folder** | `/data` inside the container, mounted from a folder of yours on the host (`./data` next to the compose file). Everything OurTube stores is in it: see [The data folder](Configuration.md#the-data-folder). |
 | **User** | The container runs as user `1000`, group `1000` (or `PUID:PGID`, see below). **The data folder must belong to that user**, or OurTube can't write to it and stops with *permission denied*. |
 | **Health check** | Docker marks the container *healthy* once the site answers. `docker ps` shows it in the STATUS column. |
-| **Behind a proxy** | The image sets `TRUST_PROXY=1`, so OurTube takes each visitor's address and HTTPS from the proxy's `X-Forwarded-For` and `X-Forwarded-Proto` headers. |
+| **Behind a proxy** | The image sets `TRUST_PROXY=1`, so OurTube takes each visitor's address and HTTPS from the `X-Forwarded-For` and `X-Forwarded-Proto` headers of a proxy on the same machine or a private network. For a proxy elsewhere see [`TRUST_PROXY`](Configuration.md#environment-variables). |
 
 ## Which way to install
 
@@ -327,10 +327,10 @@ To update it, `docker pull ghcr.io/jawshthedark/ourtube:latest`, then `docker rm
 
 > [!IMPORTANT]
 > If the published port can be reached from the internet with no reverse proxy in front, add
-> `-e TRUST_PROXY=` (or `- TRUST_PROXY=` under `environment:`). The image trusts `X-Forwarded-For` by default,
-> which lets a visitor who talks to the container directly pick the address OurTube sees, and so get around its
-> limits on sign-in attempts and sign-ups. Any value, even `0`, turns the setting on; only an empty one turns it
-> off.
+> `-e TRUST_PROXY=0` (or `- TRUST_PROXY=0` under `environment:`). Since 1.25.2 the image only believes
+> `X-Forwarded-For` from private addresses, so a visitor on the internet can't make up their address anyway, but
+> with no proxy there's nothing to trust. Before 1.25.2 any value, even `0`, turned it on, and the image trusted
+> everyone.
 
 ## Dockge, Portainer and other stack managers
 

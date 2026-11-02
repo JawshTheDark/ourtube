@@ -6,7 +6,8 @@ import { Client, startInstance, setupAdmin, registerUser } from './helpers.js';
 let inst;
 
 before(async () => {
-  inst = await startInstance('security');
+  // Behind a proxy, as the Docker image runs: the tests connect from 127.0.0.1, which is trusted.
+  inst = await startInstance('security', { env: { TRUST_PROXY: '1' } });
   await setupAdmin(inst, 'owner');
   await registerUser(inst, 'pat');
   await registerUser(inst, 'quinn');
@@ -23,6 +24,18 @@ test('ten wrong passwords for an account lock that address out of it for a while
   assert.match(blocked.data.error, /Too many failed sign-ins/);
   // Other accounts from the same address still work.
   assert.equal((await login('quinn', 'quinn-pass-1')).status, 200);
+});
+
+test('a made-up X-Forwarded-For does not get around the sign-in limit', async () => {
+  // The proxy appends the real address; whatever the visitor wrote before it is ignored.
+  const login = (i) =>
+    fetch(`${inst.url}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Forwarded-For': `198.51.100.${i}, 203.0.113.9` },
+      body: JSON.stringify({ username: 'quinn', password: `guess-${i}` }),
+    });
+  for (let i = 0; i < 10; i++) assert.equal((await login(i)).status, 401);
+  assert.equal((await login(10)).status, 429);
 });
 
 test('one address can only create so many accounts an hour', async () => {

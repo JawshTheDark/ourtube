@@ -18,9 +18,9 @@ the top right. **Settings** and, for admins, **Admin** are in the account menu a
 
 ## A few answers first
 
-**I'm the admin and I can't find the Admin page, or Invites.** Click your picture at the top right, then
-**Admin**. The sidebar only lists **Admin** when it's fully open, so on a laptop-sized window it isn't there.
-**Invites** is a box on the **Overview** tab, below the **Users** table: scroll down. See
+**I'm the admin and I can't find the Admin page, or Invites.** Click **Admin** (the shield) at the bottom of the
+sidebar, or click your picture at the top right, then **Admin**. Before 1.25.2 the slim sidebar of a laptop-sized
+window left **Admin** out, so on an older server use your picture. **Invites** is a box on the **Overview** tab, below the **Users** table: scroll down. See
 [Inviting people](Admin-Guide.md#inviting-people).
 
 **Do I have to write rules or terms?** No. A server for friends works without any. If you want them, write them in
@@ -136,7 +136,7 @@ six hours. See [What counts as a view](Watching-and-Discovery.md#what-counts-as-
 
 | Question | Where | Read more |
 | --- | --- | --- |
-| Where is the admin area? | Account menu → **Admin** (or sidebar → **Admin** when the sidebar is fully open) | [Getting to the admin area](Admin-Guide.md#getting-to-the-admin-area) |
+| Where is the admin area? | Sidebar → **Admin** (the shield), or account menu → **Admin** | [Getting to the admin area](Admin-Guide.md#getting-to-the-admin-area) |
 | What should I set up first? | | [First day on a new server](Admin-Guide.md#first-day-on-a-new-server) |
 | How do I make the server invite-only? | **Admin → Overview → Site settings → Sign-up** | [Sign-up](Moderation-and-Legal.md#sign-up) |
 | Where do I invite people? | **Admin → Overview → Invites**, below the users | [Inviting people](Admin-Guide.md#inviting-people) |

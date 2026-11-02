@@ -58,8 +58,8 @@ export function Sidebar({ mini = false, drawer = false, onClose }) {
           <Item to="/groups" icon="group" label="Groups" />
           <Item to="/playlists" icon="playlist" label="Playlists" />
           <Item to="/studio" icon="video" label="Studio" />
-          {user.is_admin && !mini && <Item to="/admin" icon="shield" label="Admin" />}
-          {!user.is_admin && user.is_moderator && !mini && <Item to="/admin/moderation" icon="gavel" label="Moderation" />}
+          {user.is_admin && <Item to="/admin" icon="shield" label="Admin" />}
+          {!user.is_admin && user.is_moderator && <Item to="/admin/moderation" icon="gavel" label="Moderation" />}
         </>
       ) : (
         !mini && (

@@ -30,9 +30,9 @@ and then tours every admin tab, box by box. What each setting does in detail is 
 The first account made on a server is its admin (it needs the setup code, see
 [First run](Installation.md#first-run)). Signed in as an admin, there are two ways in:
 
-- **Sidebar → Admin** (the shield icon), in the **You** section under **Studio**. The sidebar only shows it
-  when it's fully open: on a narrower window the sidebar shrinks to icons and leaves **Admin** out. On a phone,
-  the ☰ menu button opens the full sidebar, **Admin** included.
+- **Sidebar → Admin** (the shield icon), in the **You** section under **Studio**; in the slim sidebar of a
+  narrower window it's the last icon (before 1.25.2 the slim sidebar left it out). On a phone, the ☰ menu button
+  opens the full sidebar, **Admin** included.
 - **The avatar menu**: click your picture at the top right, then **Admin**. This works at any window size.
 
 Both open the **Overview** tab (`/admin`). The row of tabs at the top of every admin page leads to the rest:
@@ -101,7 +101,8 @@ left box, under **Site settings** and next to **Email (optional)**; on a narrow 
 users table.
 
 Invite links work when **Sign-up** is **Open**, **Needs approval** or **Invite only**. They don't work while it's
-**Closed**. With **Needs approval**, an invited person skips approval and can sign in straight away.
+**Closed**, and the **Invites** box says so. With **Needs approval**, an invited person skips approval and can sign
+in straight away.
 
 **To make an invite:**
 

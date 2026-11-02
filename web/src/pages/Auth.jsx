@@ -73,7 +73,7 @@ export function Login() {
             New here? <Link to="/register" state={{ from }}>Create an account</Link>
           </>
         ) : (
-          'Registration is closed. Ask the admin for an account.'
+          "This site isn't taking new accounts right now."
         )}
       </div>
     </div>
@@ -133,7 +133,9 @@ export function Register() {
       {pending ? (
         <div className="notice">{pending}</div>
       ) : closed ? (
-        <div className="error">Registration is closed on this site. Ask the admin to invite you.</div>
+        <div className="error">
+          {params.get('invite') ? "This site isn't taking new accounts right now, so invite links don't work. Let whoever sent you this one know." : "This site isn't taking new accounts right now."}
+        </div>
       ) : (
         <>
           {error && <div className="error">{error}</div>}

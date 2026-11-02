@@ -247,7 +247,7 @@ the environment:
 | `PORT` | `3000` | Port to listen on |
 | `HOST` | `0.0.0.0` | Interface to bind |
 | `DATA_DIR` | `./data` (`/data` in Docker) | Database, videos, thumbnails and backups |
-| `TRUST_PROXY` | unset (`1` in Docker) | Trust `X-Forwarded-*` headers from a reverse proxy |
+| `TRUST_PROXY` | unset (`1` in Docker) | Trust `X-Forwarded-*` headers from a reverse proxy: `1` for one on this machine or a private network, an address or subnet list for one elsewhere, a number of hops behind Cloudflare |
 | `SETUP_CODE` | random | The code needed to create the first (admin) account |
 | `FFMPEG_PATH`, `FFPROBE_PATH` | bundled | Use another FFmpeg, for example one built for your GPU (on ARM, ffprobe comes from the system) |
 

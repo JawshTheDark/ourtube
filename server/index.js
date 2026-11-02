@@ -3,7 +3,7 @@ import cookieParser from 'cookie-parser';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import { ROOT_DIR, DIRS, PORT, HOST, LOG_REQUESTS } from './config.js';
+import { ROOT_DIR, DIRS, PORT, HOST, LOG_REQUESTS, PRIVATE_PROXIES, trustProxySetting } from './config.js';
 import { db, getSettings, userCount } from './db.js';
 import { attachUser, authRouter, ensureSetupCode } from './auth.js';
 import { videosRouter } from './routes/videos.js';
@@ -52,7 +52,12 @@ import { liveHookRouter, liveMediaRouter, liveRouter, startLiveWatch } from './l
 captureLogs(); // for Admin -> Debugging
 const app = express();
 app.disable('x-powered-by');
-if (process.env.TRUST_PROXY) app.set('trust proxy', true);
+try {
+  app.set('trust proxy', trustProxySetting(process.env.TRUST_PROXY));
+} catch (e) {
+  console.warn(`TRUST_PROXY: ${e.message}; trusting proxies on private networks only`);
+  app.set('trust proxy', PRIVATE_PROXIES);
+}
 
 // Keep the raw bytes: network inbox requests are verified against a signature over the exact body.
 // ActivityPub posts JSON as application/activity+json or application/ld+json.

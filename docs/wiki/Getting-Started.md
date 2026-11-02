@@ -36,7 +36,7 @@ what each looks like to you:
 | **Open** | The form | The account is made and you're signed in straight away. |
 | **Needs approval** | *An admin approves new accounts before they can sign in.* above the form | After **Create account**: *Thanks! An admin needs to approve your account before you can sign in.* Until then, signing in says *This account is waiting for an admin to approve it*. You aren't told when it's approved, so try again later or ask the admin. An invite link skips the wait. |
 | **Invite only** | An **Invite code** field you must fill, with *This site is invite-only. Ask someone here for an invite link.* | Open the invite link you were sent: it fills in the code for you. |
-| **Closed** | *Registration is closed on this site. Ask the admin to invite you.* and no form | Nobody can sign up, with or without an invite. The sign-in page says *Registration is closed. Ask the admin for an account.* |
+| **Closed** | *This site isn't taking new accounts right now.* and no form | Nobody can sign up, with or without an invite. The sign-in page says the same, and an invite link adds that invite links don't work. |
 
 Invite links look like `https://<server>/register?invite=<code>`. Only admins can make them (Admin → Overview →
 **Invites**), so to bring a friend in, ask an admin for one. An invite can run out: *That invite code is not
@@ -171,9 +171,9 @@ At the very bottom: the server's name, a link to OurTube's source code, **Rules 
 **Transparency** (when the server publishes a report) and a reminder of the player's keyboard shortcuts.
 
 **The slim sidebar** shows only icons with short labels: Home, Shorts, Trending, Games, Network, Subscriptions,
-History, Liked, Watch later, Groups, Playlists and Studio. **Your channel**, **Admin**, **Moderation**, your
-subscriptions list and the footer are only in the full sidebar; use the account menu for those, or open the
-sidebar as a panel with **☰**.
+History, Liked, Watch later, Groups, Playlists, Studio, and **Admin** or **Moderation** for those who have them.
+**Your channel**, your subscriptions list and the footer are only in the full sidebar; use the account menu for
+those, or open the sidebar as a panel with **☰**.
 
 ### On a phone or a narrow window
 

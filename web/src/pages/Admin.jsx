@@ -55,7 +55,7 @@ const REGISTRATION_HELP = {
   open: 'Anyone can create an account.',
   approval: 'Anyone can sign up, but an admin approves each account before it can sign in. Invite links skip approval.',
   invite: 'Only people with an invite link can sign up.',
-  closed: 'Nobody can sign up.',
+  closed: 'Nobody can sign up, not even with an invite link.',
 };
 
 function quotaLabel(u) {
@@ -162,7 +162,7 @@ function EmailSettings() {
   );
 }
 
-function Invites() {
+function Invites({ closed }) {
   const toast = useToast();
   const [invites, setInvites] = useState(null);
   const [draft, setDraft] = useState({ note: '', max_uses: 1, expires_days: 14 });
@@ -196,6 +196,7 @@ function Invites() {
     <section className="card-panel">
       <h2>Invites</h2>
       <p className="hint">Invite links let people join when sign-up is invite-only, and skip approval when it needs approval.</p>
+      {closed && <div className="notice">Sign-up is set to Closed, so invite links don't work. Set Sign-up to Invite only or Needs approval under Site settings first.</div>}
       <form onSubmit={create} className="field-row align-end">
         <div className="field grow">
           <label>Note</label>
@@ -258,6 +259,7 @@ export default function Admin() {
   const toast = useToast();
   const [stats, setStats] = useState(null);
   const [form, setForm] = useState(null);
+  const [loaded, setLoaded] = useState(null);
   const [encoders, setEncoders] = useState([]);
   const [users, setUsers] = useState([]);
   const [busy, setBusy] = useState(false);
@@ -271,6 +273,7 @@ export default function Admin() {
     api('/admin/settings')
       .then((r) => {
         setForm(r.settings);
+        setLoaded(r.settings);
         setEncoders(r.encoders);
       })
       .catch((e) => toast(e.message));
@@ -286,8 +289,12 @@ export default function Admin() {
     e.preventDefault();
     setBusy(true);
     try {
-      const r = await api('/admin/settings', { method: 'PATCH', body: form });
+      // Only what changed here: the Email section and the Games tab save some of these settings themselves, and sending
+      // this page's copy would put them back to what they were when it loaded.
+      const changed = Object.fromEntries(Object.entries(form).filter(([k, v]) => JSON.stringify(v) !== JSON.stringify(loaded[k])));
+      const r = await api('/admin/settings', { method: 'PATCH', body: changed });
       setForm(r.settings);
+      setLoaded(r.settings);
       refresh().catch(() => {});
       toast('Settings saved');
     } catch (err) {
@@ -612,7 +619,7 @@ export default function Admin() {
           </div>
         </section>
 
-        <Invites />
+        <Invites closed={loaded?.registration_mode === 'closed'} />
         <EmailSettings />
       </div>
 

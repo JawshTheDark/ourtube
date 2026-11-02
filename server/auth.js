@@ -180,7 +180,7 @@ authRouter.post('/register', async (req, res) => {
       throw new HttpError(403, 'Wrong setup code. The code is printed in the server console when it starts (for Docker: docker logs cliptube).');
     }
   } else {
-    if (mode === 'closed') throw new HttpError(403, 'Registration is closed on this site');
+    if (mode === 'closed') throw new HttpError(403, `This site isn't taking new accounts right now${invite ? ", so invite links don't work" : ''}`);
     // An invite works in every open mode, and skips approval.
     if (invite) inv = checkInvite(invite);
     if (mode === 'invite' && !inv) throw new HttpError(403, 'This site is invite-only. Ask someone here for an invite link.');

@@ -22,7 +22,7 @@ needs before it starts are environment variables. Where the admin pages are and 
 | `PORT` | `3000` | Port to listen on (`--port N` on the command line wins) |
 | `HOST` | `0.0.0.0` | Interface to bind |
 | `DATA_DIR` | `./data` (`/data` in Docker) | Where everything is stored, see [The data folder](#the-data-folder) |
-| `TRUST_PROXY` | unset (`1` in Docker) | Set it behind a reverse proxy, so the app sees real client addresses and HTTPS. Any value turns it on. |
+| `TRUST_PROXY` | unset (`1` in Docker) | Set it behind a reverse proxy, so the app sees real client addresses and HTTPS. `1` trusts a proxy on the same machine or a private network (Docker, a LAN box, Tailscale), which fits nearly every setup. A proxy at a public address: its address, such as `203.0.113.7` (a comma-separated list of addresses or subnets works too). A public proxy such as Cloudflare in front of your own: the number of proxies, such as `2`. Empty or `0` turns it off. Before 1.25.2, any value trusted every proxy, so a visitor could make up their address. |
 | `SETUP_CODE` | random | The code needed to create the first (admin) account. Only used while no account exists; letter case doesn't matter. |
 | `UPDATE_CHECK_URL` | GitHub | Where to read the newest version from, or `off` to never check (see [Upgrading and Backups](Upgrading-and-Backups.md#checking-the-version)) |
 | `YTDLP_PATH` | `/opt/yt-dlp/yt-dlp` in Docker, else `yt-dlp` on your PATH | The yt-dlp used for [imports from YouTube](#importing-from-youtube) |

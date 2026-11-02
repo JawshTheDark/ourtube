@@ -9,6 +9,14 @@ const { parseTags, escapeHtml } = await import('../server/util.js');
 const { normalizeInstanceUrl, isPrivateIp, cleanItem } = await import('../server/network.js');
 const { normalizeEdit } = await import('../server/routes/videos.js');
 const { refusedForGood } = await import('../server/ap/deliver.js');
+const { trustProxySetting, PRIVATE_PROXIES } = await import('../server/config.js');
+
+test('trustProxySetting: "1" trusts private proxies only, a number counts hops, anything else lists addresses', () => {
+  for (const off of [undefined, '', '0', 'false', 'off']) assert.equal(trustProxySetting(off), false);
+  for (const on of ['1', 'true', 'YES']) assert.equal(trustProxySetting(on), PRIVATE_PROXIES);
+  assert.equal(trustProxySetting('2'), 2);
+  assert.equal(trustProxySetting(' 203.0.113.7, 10.0.0.0/8 '), '203.0.113.7, 10.0.0.0/8');
+});
 
 test('refusedForGood: a refusal stops deliveries, a key that could not be fetched just then does not', () => {
   assert.equal(refusedForGood(410, 'HTTP 410: Gone'), true);

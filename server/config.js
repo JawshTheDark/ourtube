@@ -15,6 +15,20 @@ export const PORT = (portArg >= 0 && Number(process.argv[portArg + 1])) || Numbe
 export const LOG_REQUESTS = process.argv.includes('--log') || process.env.LOG_REQUESTS === '1';
 export const HOST = process.env.HOST || '0.0.0.0';
 
+// TRUST_PROXY: which proxies may tell us a visitor's address (X-Forwarded-For) and HTTPS (X-Forwarded-Proto), as
+// Express's 'trust proxy'. Trusting every hop let anyone name their own address and dodge the sign-in limits, so "1"
+// (the Docker image's default) trusts only proxies on this machine or a private network: Docker, a LAN box running
+// Nginx Proxy Manager, Tailscale. A number above 1 trusts that many hops, for a public proxy such as Cloudflare in
+// front of one; anything else is a comma-separated list of proxy addresses or subnets.
+export const PRIVATE_PROXIES = 'loopback, linklocal, uniquelocal, 100.64.0.0/10';
+export function trustProxySetting(value) {
+  const v = String(value ?? '').trim().toLowerCase();
+  if (!v || ['0', 'false', 'no', 'off'].includes(v)) return false;
+  if (['1', 'true', 'yes', 'on'].includes(v)) return PRIVATE_PROXIES;
+  if (/^\d+$/.test(v)) return Number(v);
+  return v;
+}
+
 export const DIRS = {
   originals: path.join(DATA_DIR, 'originals'),
   videos: path.join(DATA_DIR, 'videos'),
