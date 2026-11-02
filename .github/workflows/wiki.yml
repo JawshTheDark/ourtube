@@ -1,0 +1,32 @@
+name: Wiki
+
+# Copies the pages in docs/wiki, and the screenshots in docs/images, to the repository's Wiki tab whenever they change
+# on main, so the Wiki tab always matches the code. docs/wiki is the source: edits made on github.com are replaced.
+# Run it by hand from the Actions tab to publish again.
+on:
+  push:
+    branches: [main]
+    paths: ['docs/wiki/**', 'docs/images/**', 'scripts/publish-wiki.sh', '.github/workflows/wiki.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: wiki
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Publish
+        env:
+          WIKI_URL: https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.wiki.git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          bash scripts/publish-wiki.sh
