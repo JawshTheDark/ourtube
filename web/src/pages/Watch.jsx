@@ -233,7 +233,7 @@ function ShareDialog({ video, videoRef, loop, onClose }) {
                   Copy embed code
                 </button>
                 <p className="hint">
-                  Paste it into a web page, or WordPress&apos;s Custom HTML block. In WordPress you can also paste the link itself into an Embed block.
+                  Paste it into a web page. In WordPress, use a Custom HTML block: a link pasted on its own also shows the player, but WordPress locks it in a box without full screen.
                 </p>
               </div>
             )}

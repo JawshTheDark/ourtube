@@ -73,6 +73,7 @@ six hours. See [What counts as a view](Watching-and-Discovery.md#what-counts-as-
 | What are the keyboard shortcuts? | Press keys while the player has focus | [Keyboard shortcuts](Watching-and-Discovery.md#keyboard-shortcuts) |
 | How do I share from a point in the video, or loop a part? | **Share → Start at** or **Loop a range** | [Sharing and embedding](Watching-and-Discovery.md#sharing-and-embedding) |
 | How do I put a video on my website? | **Share → Embed on a website** | [Sharing and embedding](Watching-and-Discovery.md#sharing-and-embedding) |
+| Full screen doesn't work in my WordPress post | Paste the embed code into a **Custom HTML** block instead of pasting the link | [WordPress](Watching-and-Discovery.md#wordpress) |
 | How do I skip sponsor reads automatically? | **Settings → Watching** | [Captions and skippable parts](Watching-and-Discovery.md#captions-and-skippable-parts) |
 | How do I report a video or a comment? | The flag icon under the video, or **Report** under the comment | [Reporting](Watching-and-Discovery.md#reporting) |
 | Why didn't my view count go up? | | [What counts as a view](Watching-and-Discovery.md#what-counts-as-a-view) |

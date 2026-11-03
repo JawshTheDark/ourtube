@@ -388,17 +388,41 @@ uploader's name is highlighted, and a link icon marks the uploader commenting fr
 The Shorts viewer's **Share** copies the Short's link straight away.
 
 **Embedding:** the embed code is an `<iframe>` sized to the video's shape, with the *start at* time if you set one.
-In WordPress, paste the video's link into an **Embed** block: the watch page tells WordPress where its player is
-(oEmbed). If WordPress won't embed it (it limits which sites it trusts), paste the embed code into a **Custom HTML**
-block instead. The player is `/embed/<id>`, and takes `?start=<seconds>`, `?autoplay=1` (muted, as browsers require)
-and `?loop=1`. It uses the browser's own video controls, with the title (a link to the watch page) and the site's
-name across the top. Public and unlisted videos can be embedded; private, group and unfinished ones can't. Watching
-in an embed counts as a view the same way as on the site.
+The player is `/embed/<id>`, and takes `?start=<seconds>`, `?autoplay=1` (muted, as browsers require) and
+`?loop=1`. It uses the browser's own video controls, with the title (a link to the watch page) and the site's name
+across the top. Public and unlisted videos can be embedded; private, group and unfinished ones can't. Watching in an
+embed counts as a view the same way as on the site.
 
 **Link previews:** shared links show a preview with an inline player in Discord, Slack and anything else that reads
 Open Graph tags, so the admin should set the *Public URL* for them to point at the right address (see
 [Configuration](Configuration.md#admin--overview)). That includes videos from other servers in the network: their
 card says who posted them and where, and the thumbnail and video come from the server that hosts them.
+
+### WordPress
+
+**Use a Custom HTML block.** Copy the code from **Share → Embed on a website → Copy embed code**, add a **Custom
+HTML** block to the post (the **+** button, then search for *Custom HTML*) and paste the code into it. That player
+has everything, full screen included.
+
+**A link on its own** (pasted into a post, or into an **Embed** block) shows the player too, because the watch page
+tells WordPress where it is (oEmbed). But WordPress only fully trusts a short list of big sites. It puts a player
+from anywhere else in a locked box (an iframe `sandbox`) with no full screen, where the title link doesn't open
+either. OurTube can't change that from its side. To swap such a player for the full one, delete its block and add a
+Custom HTML block as above.
+
+**To make plain links work fully**, tell WordPress to trust your OurTube server. Put this in a snippet plugin such
+as *Code Snippets*, or in your child theme's `functions.php`, with your server's address in both places:
+
+```php
+add_action('init', function () {
+    foreach (['watch', 'shorts', 'embed'] as $page) {
+        wp_oembed_add_provider("https://clips.example.com/$page/*", 'https://clips.example.com/api/oembed');
+    }
+});
+```
+
+WordPress remembers the player it made for each post, so open the posts that already have one and save them again;
+they fetch the full player then.
 
 ## Downloads and the 720p copy
 
